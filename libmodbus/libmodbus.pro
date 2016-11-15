@@ -18,5 +18,30 @@ unix {
     PRE_TARGETDEPS += build_libmodbus
 }
 win32 {
-    # TODO
+    TEMPLATE = lib
+    CONFIG += dll
+    CONFIG -= qt
+
+    SOURCES += \
+        libmodbus/src/modbus.c \
+        libmodbus/src/modbus-data.c \
+        libmodbus/src/modbus-rtu.c \
+        libmodbus/src/modbus-tcp.c
+
+    HEADERS += \
+        libmodbus/src/modbus-version.h \
+        libmodbus/src/modbus.h \
+        libmodbus/src/modbus-private.h \
+        libmodbus/src/modbus-rtu.h \
+        libmodbus/src/modbus-rtu-private.h \
+        libmodbus/src/modbus-tcp.h \
+        libmodbus/src/modbus-tcp-private.h \
+        libmodbus/src/config.h
+
+    INCLUDEPATH += $${PWD}/libmodbus/src
+    LIBS += \
+        -lwsock32 \
+        -lws2_32
+
+    DESTDIR = $${LIBMODBUS_CPP_DESTDIR}
 }

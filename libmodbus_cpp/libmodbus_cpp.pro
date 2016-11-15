@@ -9,7 +9,7 @@ QT += network serialport
 
 TEMPLATE = lib
 
-CONFIG += c++11
+CONFIG += c++11 dll
 
 include(../libmodbus_cpp.pri)
 
