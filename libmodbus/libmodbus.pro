@@ -37,6 +37,8 @@ win32 {
         libmodbus/src/modbus-tcp-private.h \
         libmodbus/src/config.h
 
+    INCLUDEPATH += $${PWD}/libmodbus/src
+
     LIBS += \
         -lwsock32 \
         -lws2_32
