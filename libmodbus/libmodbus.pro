@@ -1,5 +1,6 @@
 TARGET = modbus
 
+QMAKE_CFLAGS += -Wno-all -Wno-unused
 LIBMODBUS_CPP_MAIN_CONF = $${PWD}/libmodbus_cpp_user_conf.pri
 LIBMODBUS_CPP_USER_CONF = $${PWD}/../libmodbus_cpp_user_conf.pri
 

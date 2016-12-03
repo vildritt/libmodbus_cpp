@@ -20,6 +20,8 @@ CONFIG += $$LIBMODBUS_CPP_CONFIG
 INCLUDEPATH += $${PWD}/$${LIBMODBUS_DIR_RELATIVE}
 LIBS += $$LIBMODBUS_LIB
 
+QMAKE_CXXFLAGS += -Wno-unused
+
 SOURCES += \
     backend.cpp \
     slave_tcp.cpp \
