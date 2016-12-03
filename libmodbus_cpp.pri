@@ -1,11 +1,18 @@
-LIBMODBUS_CPP_MAIN_CONF = $${PWD}/libmodbus_cpp_user_conf.pri
-LIBMODBUS_CPP_USER_CONF = $${PWD}/../libmodbus_cpp_user_conf.pri
+LIBMODBUS_CPP_TARGET = modbus_cpp
+LIBMODBUS_CPP_DESTDIR = bin
+LIBMODBUS_CPP_CONFIG = libmodbus_cpp_tests
+LIBMODBUS_CPP_CONFIG += dll
+LIBMODBUS_HEADERS = $${PWD}/libmodbus/include
 
 INCLUDEPATH += $${PWD}
 INCLUDEPATH += $${PWD}/libmodbus/include
 
-exists($${LIBMODBUS_CPP_MAIN_CONF}): include($${LIBMODBUS_CPP_MAIN_CONF})
-exists($${LIBMODBUS_CPP_USER_CONF}): include($${LIBMODBUS_CPP_USER_CONF})
+include(lxqmake.pri): {
+    LIB_USER_CONF_FILES = $$lxqmt_getUserConfs($${PWD})
+    for(LIB_USER_CONF_FILE, LIB_USER_CONF_FILES):include($$LIB_USER_CONF_FILE)
+}
+
+LIBMODBUS_LIB = -L$${LIBMODBUS_CPP_DESTDIR} -lmodbus
 
 QT += network serialport
 

@@ -1,13 +1,12 @@
 TARGET = modbus
 
 QMAKE_CFLAGS += -Wno-all -Wno-unused
-LIBMODBUS_CPP_MAIN_CONF = $${PWD}/libmodbus_cpp_user_conf.pri
-LIBMODBUS_CPP_USER_CONF = $${PWD}/../libmodbus_cpp_user_conf.pri
-
 INCLUDEPATH += $${PWD}
 
-exists($${LIBMODBUS_CPP_MAIN_CONF}): include($${LIBMODBUS_CPP_MAIN_CONF})
-exists($${LIBMODBUS_CPP_USER_CONF}): include($${LIBMODBUS_CPP_USER_CONF})
+include(../lxqmake.pri) {
+    LIB_USER_CONF_FILES = $$lxqmt_getUserConfs($${PWD})
+    for(LIB_USER_CONF_FILE, LIB_USER_CONF_FILES):include($$LIB_USER_CONF_FILE)
+}
 
 unix {
     # http://stackoverflow.com/questions/3612283/running-a-program-script-from-qmake
