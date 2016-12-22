@@ -1,6 +1,6 @@
 TARGET = modbus
 
-QMAKE_CFLAGS += -Wno-all -Wno-unused
+QMAKE_CFLAGS += -Wno-all -Wno-unused -Wno-format
 INCLUDEPATH += $${PWD}
 
 include(../lxqmake.pri) {
