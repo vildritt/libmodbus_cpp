@@ -1,8 +1,10 @@
 #include <libmodbus_cpp/factory.h>
 #include <libmodbus_cpp/master_tcp.h>
 #include <libmodbus_cpp/slave_tcp.h>
+#ifdef USE_QT5
 #include <libmodbus_cpp/master_rtu.h>
 #include <libmodbus_cpp/slave_rtu.h>
+#endif
 
 std::unique_ptr<libmodbus_cpp::MasterTcp> libmodbus_cpp::Factory::createTcpMaster(const char *address, int port)
 {
@@ -18,6 +20,7 @@ std::unique_ptr<libmodbus_cpp::SlaveTcp> libmodbus_cpp::Factory::createTcpSlave(
     return std::unique_ptr<SlaveTcp>(new SlaveTcp(b.release()));
 }
 
+#ifdef USE_QT5
 std::unique_ptr<libmodbus_cpp::MasterRtu> libmodbus_cpp::Factory::createRtuMaster(const char *device, int baud, libmodbus_cpp::Parity parity, DataBits dataBits, StopBits stopBits)
 {
     std::unique_ptr<MasterRtuBackend> b(new MasterRtuBackend());
@@ -31,3 +34,4 @@ std::unique_ptr<libmodbus_cpp::SlaveRtu> libmodbus_cpp::Factory::createRtuSlave(
     b->init(device, baud, parity, dataBits, stopBits);
     return std::unique_ptr<SlaveRtu>(new SlaveRtu(b.release()));
 }
+#endif

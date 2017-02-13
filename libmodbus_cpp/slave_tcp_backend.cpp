@@ -40,7 +40,11 @@ bool libmodbus_cpp::SlaveTcpBackend::startListen()
     int serverSocket = modbus_tcp_listen(getCtx(), m_maxConnectionCount);
     if (serverSocket != -1) {
         m_tcpServer.setSocketDescriptor(serverSocket);
+#ifdef USE_QT5
         connect(&m_tcpServer, &QTcpServer::newConnection, this, &SlaveTcpBackend::slot_processConnection);
+#else
+        connect(&m_tcpServer, SIGNAL(newConnection()), this, SLOT(slot_processConnection()));
+#endif
         return true;
     } else {
         qDebug() << modbus_strerror(errno);
@@ -63,8 +67,13 @@ void libmodbus_cpp::SlaveTcpBackend::slot_processConnection()
             continue;
         if (m_verbose)
             qDebug() << "new socket:" << s->socketDescriptor();
+#ifdef USE_QT5
         connect(s, &QTcpSocket::readyRead, this, &SlaveTcpBackend::slot_readFromSocket);
         connect(s, &QTcpSocket::disconnected, this, &SlaveTcpBackend::slot_removeSocket);
+#else
+        connect(s, SIGNAL(readyRead()),    this, SLOT(slot_readFromSocket()));
+        connect(s, SIGNAL(disconnected()), this, SLOT(slot_removeSocket()));
+#endif
         m_sockets.insert(s);
     }
 }

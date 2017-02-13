@@ -8,6 +8,8 @@ SUBDIRS += \
 
 libmodbus_cpp.depends = libmodbus
 
+DEFINES += USE_QT5
+
 contains(LIBMODBUS_CPP_CONFIG, libmodbus_cpp_tests) {
     SUBDIRS += tests
     tests.depends = libmodbus_cpp
