@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(libmodbus_cpp)
+project(modbus_cpp)
 
 include_directories(libmodbus/include)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -18,17 +18,17 @@ set(SOURCE_LIB
     libmodbus_cpp/slave_rtu_backend.cpp
     libmodbus_cpp/master_rtu_backend.cpp
     libmodbus_cpp/master_rtu.cpp
-    )
+)
 
 find_package(Qt5Core)
 find_package(Qt5Network)
 find_package(Qt5SerialPort)
 
-add_library(libmodbus_cpp SHARED ${SOURCE_LIB})
+add_library(modbus_cpp SHARED ${SOURCE_LIB})
 
-qt5_use_modules(libmodbus_cpp Core)
-qt5_use_modules(libmodbus_cpp Network)
-qt5_use_modules(libmodbus_cpp SerialPort)
+qt5_use_modules(modbus_cpp Core)
+qt5_use_modules(modbus_cpp Network)
+qt5_use_modules(modbus_cpp SerialPort)
 
 
 
