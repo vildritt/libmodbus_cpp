@@ -15,16 +15,20 @@ set(SOURCE_LIB
     libmodbus_cpp/master_tcp.cpp
     libmodbus_cpp/factory.cpp
     libmodbus_cpp/slave_rtu.cpp
-    #libmodbus_cpp/slave_rtu_backend.cpp
-    #libmodbus_cpp/master_rtu_backend.cpp
-    #libmodbus_cpp/master_rtu.cpp
+    libmodbus_cpp/slave_rtu_backend.cpp
+    libmodbus_cpp/master_rtu_backend.cpp
+    libmodbus_cpp/master_rtu.cpp
     )
 
 find_package(Qt5Core)
-
-
-#find_package(Qt4 COMPONENTS QTCORE QTNETWORK REQUIRED)
-#include (${QT_USE_FILE})
+find_package(Qt5Network)
+find_package(Qt5SerialPort)
 
 add_library(libmodbus_cpp SHARED ${SOURCE_LIB})
-#target_link_libraries(libmodbus_cpp  ${QT_LIBRARIES})
+
+qt5_use_modules(libmodbus_cpp Core)
+qt5_use_modules(libmodbus_cpp Network)
+qt5_use_modules(libmodbus_cpp SerialPort)
+
+
+
