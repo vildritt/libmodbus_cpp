@@ -69,12 +69,14 @@ class AbstractSlaveBackend : public AbstractBackend
     using HooksByFunctionCode = QMap<FunctionCode, HooksByAddress>;
 
     HooksByFunctionCode m_hooks;
+    HooksByFunctionCode m_postMessageHooks;
     modbus_mapping_t *m_map = Q_NULLPTR;
 
 protected:
     AbstractSlaveBackend();
 
     void checkHooks(const uint8_t *req, int req_length);
+    void checkPostMessageHooks(const uint8_t *req, int req_length);
 
 public:
     ~AbstractSlaveBackend() override;
@@ -90,6 +92,9 @@ public:
     virtual void stopListen() = 0;
 
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
+    void checkHookMap(const uint8_t *req, int req_length, const HooksByFunctionCode &hooks);
+
 };
 
 }

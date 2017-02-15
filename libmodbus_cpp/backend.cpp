@@ -55,15 +55,26 @@ AbstractSlaveBackend::AbstractSlaveBackend()
 
 void AbstractSlaveBackend::checkHooks(const uint8_t *req, int req_length)
 {
+    checkHookMap(req, req_length, m_hooks);
+}
+
+void AbstractSlaveBackend::checkPostMessageHooks(const uint8_t *req, int req_length)
+{
+    checkHookMap(req, req_length, m_postMessageHooks);
+}
+
+void AbstractSlaveBackend::checkHookMap(const uint8_t *req, int req_length, const AbstractSlaveBackend::HooksByFunctionCode &hookMap)
+{
     Q_UNUSED(req_length);
     int offset = modbus_get_header_length(getCtx());
     FunctionCode function = req[offset];
     Address address = (req[offset + 1] << 8) + req[offset + 2];
 
-    auto &hooks = m_hooks[function];
+    const auto &hooks = hookMap[function];
     if (hooks.contains(address))
         hooks[address]();
 }
+
 
 AbstractSlaveBackend::~AbstractSlaveBackend()
 {
@@ -84,4 +95,9 @@ bool AbstractSlaveBackend::initRegisterMap(int holdingRegistersCount, int inputR
 void AbstractSlaveBackend::addHook(FunctionCode funcCode, Address address, HookFunction func)
 {
     m_hooks[funcCode][address] = func;
+}
+
+void AbstractSlaveBackend::addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func)
+{
+    m_postMessageHooks[funcCode][address] = func;
 }

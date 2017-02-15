@@ -26,6 +26,7 @@ public:
     bool setAddress(uint8_t address);
     bool setDefaultAddress();
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
 
     bool startListen();
     void stopListen();

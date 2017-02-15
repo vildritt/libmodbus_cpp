@@ -27,6 +27,11 @@ void libmodbus_cpp::AbstractSlave::addHook(libmodbus_cpp::FunctionCode funcCode,
     getBackend()->addHook(funcCode, address, func);
 }
 
+void libmodbus_cpp::AbstractSlave::addPostMessageHook(libmodbus_cpp::FunctionCode funcCode, libmodbus_cpp::Address address, libmodbus_cpp::HookFunction func)
+{
+    getBackend()->addPostMessageHook(funcCode, address, func);
+}
+
 bool libmodbus_cpp::AbstractSlave::startListen()
 {
     return getBackend()->startListen();
