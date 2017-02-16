@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(modbus_cpp)
 
+set(CMAKE_AUTOMOC ON)
+
 include_directories(libmodbus/include)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
