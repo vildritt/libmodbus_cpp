@@ -59,7 +59,7 @@ void libmodbus_cpp::SlaveTcpBackend::stopListen()
 
 void libmodbus_cpp::SlaveTcpBackend::slot_processConnection()
 {
-    if (m_verbose)
+    //if (m_verbose)
         qDebug() << "Process connection";
     while (m_tcpServer.hasPendingConnections()) {
         QTcpSocket *s = m_tcpServer.nextPendingConnection();
@@ -80,6 +80,7 @@ void libmodbus_cpp::SlaveTcpBackend::slot_processConnection()
 
 void libmodbus_cpp::SlaveTcpBackend::slot_readFromSocket()
 {
+    qDebug() << "Read from socket";
     QTcpSocket *s = dynamic_cast<QTcpSocket*>(sender());
     if (s) {
         if (m_verbose)
@@ -93,7 +94,7 @@ void libmodbus_cpp::SlaveTcpBackend::slot_readFromSocket()
                 qDebug() << "received:" << buf.data();
             checkHooks(buf.data(), messageLength);
             modbus_reply(getCtx(), buf.data(), messageLength, getMap());
-            checkHooks(buf.data(), messageLength);
+            checkPostMessageHooks(buf.data(), messageLength);
         } else if (messageLength == -1) {
             if (m_verbose)
                 qDebug() << modbus_strerror(errno);

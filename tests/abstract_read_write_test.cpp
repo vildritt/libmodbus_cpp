@@ -31,7 +31,7 @@ void libmodbus_cpp::AbstractReadWriteTest::readVectorOfCoils()
         expected[i] = (bool)(i & 1);
     try {
         QVector<bool> actual = m_master->readCoils(0, TABLE_SIZE);
-        bool equals = std::equal(actual.cbegin(), actual.cend(), expected.cbegin());
+        bool equals = std::equal(actual.begin(), actual.end(), expected.begin());
         QCOMPARE(equals, true);
     } catch (RemoteRWError &e) {
         QVERIFY2(false, e.what());
@@ -66,7 +66,7 @@ void libmodbus_cpp::AbstractReadWriteTest::writeVectorOfCoils()
     try {
         m_master->writeCoils(0, expected);
         QVector<bool> actual = m_master->readCoils(0, TABLE_SIZE);
-        bool equals = std::equal(actual.cbegin(), actual.cend(), expected.cbegin());
+        bool equals = std::equal(actual.begin(), actual.end(), expected.begin());
         QCOMPARE(equals, true);
     } catch (RemoteRWError &e) {
         QVERIFY2(false, e.what());
@@ -98,7 +98,7 @@ void libmodbus_cpp::AbstractReadWriteTest::readVectorOfDiscreteInputs()
         expected[i] = !(bool)(i & 1);
     try {
         QVector<bool> actual = m_master->readDiscreteInputs(0, TABLE_SIZE);
-        bool equals = std::equal(actual.cbegin(), actual.cend(), expected.cbegin());
+        bool equals = std::equal(actual.begin(), actual.end(), expected.begin());
         QCOMPARE(equals, true);
     } catch (RemoteRWError &e) {
         QVERIFY2(false, e.what());

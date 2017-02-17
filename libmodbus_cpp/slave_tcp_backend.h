@@ -18,7 +18,7 @@ class SlaveTcpBackend : public QObject, public AbstractSlaveBackend {
     QSet<QTcpSocket*> m_sockets;
     const modbus_backend_t *m_originalBackend = nullptr;
     QScopedPointer<modbus_backend_t> m_customBackend;
-    bool m_verbose = false;
+    bool m_verbose = true;
 
 public:
     SlaveTcpBackend();

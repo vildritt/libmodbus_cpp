@@ -18,10 +18,19 @@ set(SOURCE_LIB
     libmodbus_cpp/factory.cpp
 )
 
+set(TESTS_APP
+    tests/main.cpp
+    tests/reg_map_read_write_test.cpp
+    tests/abstract_read_write_test.cpp
+    tests/tcp_read_write_test.cpp
+#    tests/rtu_read_write_test.cpp
+    )
+
 if(DEFINED USE_QT5)
     find_package(Qt5Core)
     find_package(Qt5Network)
     find_package(Qt5SerialPort)
+    find_package(Qt5Test)
 
     set(SOURCE_LIB_RTU
         libmodbus_cpp/slave_rtu.cpp
@@ -30,7 +39,7 @@ if(DEFINED USE_QT5)
         libmodbus_cpp/master_rtu.cpp
     )
 else()
-    find_package(Qt4 COMPONENTS QTCORE QTNETWORK REQUIRED)
+    find_package(Qt4 COMPONENTS QTCORE QTNETWORK QTTEST REQUIRED)
     include (${QT_USE_FILE})
     set(SOURCE_LIB_RTU)
     add_definitions( "-DQ_NULLPTR=nullptr" )
@@ -38,12 +47,27 @@ endif()
 
 add_library(modbus_cpp SHARED ${SOURCE_LIB} ${SOURCE_LIB_RTU})
 
+set(MODBUS_LIB
+    libmodbus/libmodbus/src/modbus.c
+    libmodbus/libmodbus/src/modbus-data.c
+    libmodbus/libmodbus/src/modbus-rtu.c
+    libmodbus/libmodbus/src/modbus-tcp.c
+    )
+
+add_library(modbus SHARED ${MODBUS_LIB})
+add_dependencies(modbus_cpp modbus)
+
+link_directories(${LIBMODBUS_CPP_LIBRARIES_DIR})
+add_executable(modbus_tests ${TESTS_APP} ${SOURCE_LIB})
+target_link_libraries(modbus_tests ${LIBMODBUS_CPP_LIBRARIES} ${QT_LIBRARIES})
+add_dependencies(modbus_tests modbus_cpp)
+
 if(DEFINED USE_QT5)
     qt5_use_modules(modbus_cpp Core)
     qt5_use_modules(modbus_cpp Network)
     qt5_use_modules(modbus_cpp SerialPort)
+    qt5_use_modules(modbus_cpp Test)
 endif()
-
 
 
 
