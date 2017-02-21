@@ -68,6 +68,10 @@ if(NOT WIN32)
     add_dependencies(modbus_tests modbus_cpp)
 endif()
 
+if(NOT DEFINED USE_QT5)
+target_link_libraries(modbus_cpp ${QT_LIBRARIES})
+endif()
+
 if(DEFINED USE_QT5)
     qt5_use_modules(modbus_cpp Core)
     qt5_use_modules(modbus_cpp Network)
