@@ -73,16 +73,22 @@ if(DEFINED USE_QT5)
     qt5_use_modules(modbus_cpp Network)
     qt5_use_modules(modbus_cpp SerialPort)
     qt5_use_modules(modbus_cpp Test)
+
+    qt5_use_modules(modbus_tests Core)
+    qt5_use_modules(modbus_tests Network)
+    qt5_use_modules(modbus_tests SerialPort)
+    qt5_use_modules(modbus_tests Test)
+
     add_definitions(-DUSE_QT5)
 endif()
 
 if(WIN32)
     target_link_libraries(
         modbus -lWs2_32
-        )
+    )
     link_directories(
         ${CMAKE_CURRENT_BINARY_DIR}
-        )
+    )
     target_link_libraries(modbus_cpp modbus)
 endif()
 
