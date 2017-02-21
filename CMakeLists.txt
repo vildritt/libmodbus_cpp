@@ -7,6 +7,10 @@ set(CMAKE_AUTOMOC ON)
 include_directories(libmodbus/include)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+if(WIN32)
+    cmake_policy(SET CMP0020 NEW)
+endif()
+
 set(SOURCE_LIB
     libmodbus_cpp/backend.cpp
     libmodbus_cpp/slave_tcp.cpp
@@ -58,15 +62,28 @@ add_library(modbus SHARED ${MODBUS_LIB})
 add_dependencies(modbus_cpp modbus)
 
 link_directories(${LIBMODBUS_CPP_LIBRARIES_DIR})
-add_executable(modbus_tests ${TESTS_APP} ${SOURCE_LIB})
-target_link_libraries(modbus_tests ${LIBMODBUS_CPP_LIBRARIES} ${QT_LIBRARIES})
-add_dependencies(modbus_tests modbus_cpp)
+if(NOT WIN32)
+    add_executable(modbus_tests ${TESTS_APP} ${SOURCE_LIB})
+    target_link_libraries(modbus_tests ${LIBMODBUS_CPP_LIBRARIES} ${QT_LIBRARIES})
+    add_dependencies(modbus_tests modbus_cpp)
+endif()
 
 if(DEFINED USE_QT5)
     qt5_use_modules(modbus_cpp Core)
     qt5_use_modules(modbus_cpp Network)
     qt5_use_modules(modbus_cpp SerialPort)
     qt5_use_modules(modbus_cpp Test)
+    add_definitions(-DUSE_QT5)
+endif()
+
+if(WIN32)
+    target_link_libraries(
+        modbus -lWs2_32
+        )
+    link_directories(
+        ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    target_link_libraries(modbus_cpp modbus)
 endif()
 
 
