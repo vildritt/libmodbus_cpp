@@ -12,15 +12,17 @@ class MasterTcp;
 class SlaveRtu;
 class MasterRtu;
 #endif
+class AbstractSlave;
+class AbstractMaster;
 
 class Factory
 {
 public:
-    static std::unique_ptr<MasterTcp> createTcpMaster(const char *address, int port);
-    static std::unique_ptr<SlaveTcp> createTcpSlave(const char *address, int port);
+    static std::unique_ptr<AbstractMaster> createTcpMaster(const char *address, int port);
+    static std::unique_ptr<AbstractSlave> createTcpSlave(const char *address, int port);
 #ifdef USE_QT5
-    static std::unique_ptr<MasterRtu> createRtuMaster(const char *device, int baud, Parity parity = Parity::None, DataBits dataBits = DataBits::b8, StopBits stopBits = StopBits::b1);
-    static std::unique_ptr<SlaveRtu> createRtuSlave(const char *device, int baud, Parity parity = Parity::None, DataBits dataBits = DataBits::b8, StopBits stopBits = StopBits::b1);
+    static std::unique_ptr<AbstractMaster> createRtuMaster(const char *device, int baud, Parity parity = Parity::None, DataBits dataBits = DataBits::b8, StopBits stopBits = StopBits::b1);
+    static std::unique_ptr<AbstractSlave> createRtuSlave(const char *device, int baud, Parity parity = Parity::None, DataBits dataBits = DataBits::b8, StopBits stopBits = StopBits::b1);
 #endif
 };
 
