@@ -14,7 +14,7 @@ class SlaveRtuBackend : public QObject, public AbstractSlaveBackend
     QSerialPort m_serialPort;
     const modbus_backend_t *m_originalBackend = nullptr;
     QScopedPointer<modbus_backend_t> m_customBackend;
-    bool m_verbose = false;
+    bool m_verbose;
 
 public:
     SlaveRtuBackend();

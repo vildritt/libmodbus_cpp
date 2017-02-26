@@ -2,11 +2,16 @@
 #include <QDebug>
 #include <modbus/modbus-private.h>
 #include <libmodbus_cpp/slave_rtu_backend.h>
+#include <libmodbus_cpp/global.h>
 
 QSerialPort *libmodbus_cpp::SlaveRtuBackend::m_staticPort = nullptr;
 
 libmodbus_cpp::SlaveRtuBackend::SlaveRtuBackend()
+    : m_verbose(libmodbus_cpp::isVerbose())
 {
+    if (m_verbose) {
+        qDebug() << "modbus slave rtu created";
+    }
 }
 
 libmodbus_cpp::SlaveRtuBackend::~SlaveRtuBackend()
@@ -43,6 +48,10 @@ void libmodbus_cpp::SlaveRtuBackend::init(const char *device, int baud, libmodbu
     m_customBackend->select = customSelect;
     m_customBackend->recv = customRecv;
     getCtx()->backend = m_customBackend.data();
+    getCtx()->debug = m_verbose ? 1 : 0;
+    if (getCtx()->debug) {
+        qInfo() << "libmodbus debug on";
+    }
 }
 
 bool libmodbus_cpp::SlaveRtuBackend::startListen()

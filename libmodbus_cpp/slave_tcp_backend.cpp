@@ -1,11 +1,13 @@
 #include <modbus/modbus-private.h>
 #include <libmodbus_cpp/slave_tcp_backend.h>
+#include <libmodbus_cpp/global.h>
 #include <errno.h>
 
 
 QTcpSocket *libmodbus_cpp::SlaveTcpBackend::m_currentSocket = Q_NULLPTR;
 
 libmodbus_cpp::SlaveTcpBackend::SlaveTcpBackend()
+    : m_verbose(libmodbus_cpp::isVerbose())
 {
 }
 
@@ -31,6 +33,7 @@ void libmodbus_cpp::SlaveTcpBackend::init(const char *address, int port, int max
     std::memcpy(m_customBackend.data(), m_originalBackend, sizeof(*m_customBackend));
     m_customBackend->select = customSelect;
     m_customBackend->recv = customRecv;
+    getCtx()->debug = m_verbose ? 1 : 0;
     getCtx()->backend = m_customBackend.data();
 }
 

@@ -20,6 +20,7 @@ set(SOURCE_LIB
     libmodbus_cpp/master_tcp_backend.cpp
     libmodbus_cpp/master_tcp.cpp
     libmodbus_cpp/factory.cpp
+    libmodbus_cpp/global.cpp
 )
 
 set(TESTS_APP

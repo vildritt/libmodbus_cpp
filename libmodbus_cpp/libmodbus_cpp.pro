@@ -34,7 +34,8 @@ SOURCES += \
     slave_rtu.cpp \
     slave_rtu_backend.cpp \
     master_rtu_backend.cpp \
-    master_rtu.cpp
+    master_rtu.cpp \
+    global.cpp
 
 HEADERS += \
     backend.h \
@@ -49,7 +50,8 @@ HEADERS += \
     slave_rtu.h \
     slave_rtu_backend.h \
     master_rtu_backend.h \
-    master_rtu.h
+    master_rtu.h \
+    global.h
 
 DISTFILES += \
     libmodbus_cpp.prf
