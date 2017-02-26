@@ -32,6 +32,7 @@ private:
     static QSerialPort *m_staticPort;
     static int customSelect(modbus_t *ctx, fd_set *rset, struct timeval *tv, int msg_length);
     static ssize_t customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length);
+    static ssize_t customSend(modbus_t *ctx, const uint8_t *rsp, int rsp_length);
 };
 
 }
