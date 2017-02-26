@@ -6,12 +6,6 @@
 
 namespace libmodbus_cpp {
 
-class SlaveTcp;
-class MasterTcp;
-#ifdef USE_QT5
-class SlaveRtu;
-class MasterRtu;
-#endif
 class AbstractSlave;
 class AbstractMaster;
 
