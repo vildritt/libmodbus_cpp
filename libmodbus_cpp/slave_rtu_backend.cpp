@@ -118,6 +118,7 @@ void libmodbus_cpp::SlaveRtuBackend::slot_readFromPort()
             qDebug() << "received:" << QByteArray(reinterpret_cast<const char*>(buf.data()), messageLength);
         processHooks(buf.data(), messageLength, HookTime::Preprocessing);
         modbus_reply(getCtx(), buf.data(), messageLength, getMap());
+        processHooks(buf.data(), messageLength, HookTime::Postprocessing);
     } else if (messageLength == -1) {
         if (m_verbose)
             qDebug() << modbus_strerror(errno);
