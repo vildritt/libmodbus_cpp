@@ -89,38 +89,42 @@ private:
 
 template<typename ValueType>
 void AbstractSlave::setValueToHoldingRegister(uint16_t address, ValueType value) {
-    if (!getBackend()->getMap())
+    modbus_mapping_t * map = getBackend()->getMap();
+    if (!map)
         throw LocalWriteError("map was not inited");
-    if (getBackend()->getMap()->nb_registers <= address)
+    if (map->nb_registers <= address)
         throw LocalWriteError("wrong address");
-    setValueToTable(getBackend()->getMap()->tab_registers, address, value);
+    setValueToTable(map->tab_registers, address, value);
 }
 
 template<typename ValueType>
 ValueType AbstractSlave::getValueFromHoldingRegister(uint16_t address) {
-    if (!getBackend()->getMap())
+    modbus_mapping_t * map = getBackend()->getMap();
+    if (!map)
         throw LocalReadError("map was not inited");
-    if (getBackend()->getMap()->nb_registers <= address)
+    if (map->nb_registers <= address)
         throw LocalReadError("wrong address");
-    return getValueFromTable<ValueType>(getBackend()->getMap()->tab_registers, address);
+    return getValueFromTable<ValueType>(map->tab_registers, address);
 }
 
 template<typename ValueType>
 void AbstractSlave::setValueToInputRegister(uint16_t address, ValueType value) {
-    if (!getBackend()->getMap())
+    modbus_mapping_t * map = getBackend()->getMap();
+    if (!map)
         throw LocalWriteError("map was not inited");
-    if (getBackend()->getMap()->nb_input_registers <= address)
+    if (map->nb_input_registers <= address)
         throw LocalWriteError("wrong address");
-    setValueToTable(getBackend()->getMap()->tab_input_registers, address, value);
+    setValueToTable(map->tab_input_registers, address, value);
 }
 
 template<typename ValueType>
 ValueType AbstractSlave::getValueFromInputRegister(uint16_t address) {
-    if (!getBackend()->getMap())
+    modbus_mapping_t * map = getBackend()->getMap();
+    if (!map)
         throw LocalReadError("map was not inited");
-    if (getBackend()->getMap()->nb_input_registers <= address)
+    if (map->nb_input_registers <= address)
         throw LocalReadError("wrong address");
-    return getValueFromTable<ValueType>(getBackend()->getMap()->tab_input_registers, address);
+    return getValueFromTable<ValueType>(map->tab_input_registers, address);
 }
 
 }
