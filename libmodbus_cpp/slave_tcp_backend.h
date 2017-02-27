@@ -25,8 +25,10 @@ public:
     ~SlaveTcpBackend();
 
     void init(const char *address = NULL, int port = MODBUS_TCP_DEFAULT_PORT, int maxConnectionCount = 10); // NULL for server to listen all
-    bool startListen() override;
-    void stopListen() override;
+
+protected:
+    bool doStartListen() override;
+    void doStopListen() override;
 
 private slots:
     void slot_processConnection();

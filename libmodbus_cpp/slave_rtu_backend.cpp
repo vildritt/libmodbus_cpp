@@ -71,7 +71,7 @@ void libmodbus_cpp::SlaveRtuBackend::init(const char *device, int baud, libmodbu
     }
 }
 
-bool libmodbus_cpp::SlaveRtuBackend::startListen()
+bool libmodbus_cpp::SlaveRtuBackend::doStartListen()
 {
     if (m_verbose) {
         qDebug() << "start listen";
@@ -100,7 +100,7 @@ bool libmodbus_cpp::SlaveRtuBackend::startListen()
     return res;
 }
 
-void libmodbus_cpp::SlaveRtuBackend::stopListen()
+void libmodbus_cpp::SlaveRtuBackend::doStopListen()
 {
     m_serialPort.close();
 }

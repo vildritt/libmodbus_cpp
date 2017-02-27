@@ -92,6 +92,16 @@ bool AbstractSlaveBackend::initRegisterMap(int holdingRegistersCount, int inputR
     return initMap(0, 0, holdingRegistersCount, inputRegistersCount);
 }
 
+bool AbstractSlaveBackend::startListen()
+{
+    return doStartListen();
+}
+
+void AbstractSlaveBackend::stopListen()
+{
+    doStopListen();
+}
+
 void AbstractSlaveBackend::addHook(FunctionCode funcCode, Address address, HookFunction func)
 {
     m_hooks[funcCode][address] = func;

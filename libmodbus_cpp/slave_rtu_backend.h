@@ -22,11 +22,12 @@ public:
 
     void init(const char *device, int baud, Parity parity = Parity::None, DataBits dataBits = DataBits::b8, StopBits stopBits = StopBits::b1);
 
-    bool startListen() override;
-    void stopListen() override;
-
 public slots:
     void slot_readFromPort();
+
+protected:
+    bool doStartListen() override;
+    void doStopListen() override;
 
 private:
     static QSerialPort *m_staticPort;

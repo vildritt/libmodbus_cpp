@@ -78,6 +78,9 @@ protected:
     void checkHooks(const uint8_t *req, int req_length);
     void checkPostMessageHooks(const uint8_t *req, int req_length);
 
+    virtual bool doStartListen() = 0;
+    virtual void doStopListen() = 0;
+
 public:
     ~AbstractSlaveBackend() override;
 
@@ -88,8 +91,8 @@ public:
     bool initMap(int holdingBitsCount, int inputBitsCount, int holdingRegistersCount, int inputRegistersCount);
     bool initRegisterMap(int holdingRegistersCount, int inputRegistersCount);
 
-    virtual bool startListen() = 0;
-    virtual void stopListen() = 0;
+    bool startListen();
+    void stopListen();
 
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
