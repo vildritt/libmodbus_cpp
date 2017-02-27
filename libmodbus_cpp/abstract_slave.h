@@ -31,12 +31,12 @@ public:
     void addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
 
-    void addUniHook(DataType type, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
-    void addUniHook(DataType type, AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
-    void addReadHook (DataType type, Address rangeBaseAddress, UniHookFunction func, HookTime hookTime = HookTime::Preprocessing);
-    void addWriteHook(DataType type, Address rangeBaseAddress, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
-    void addReadHookOnRange (DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Preprocessing);
-    void addWriteHookOnRange(DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
+    void registerHook(DataType type, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
+    void registerHook(DataType type, AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
+    void registerReadHook (DataType type, Address rangeBaseAddress, UniHookFunction func, HookTime hookTime = HookTime::Preprocessing);
+    void registerWriteHook(DataType type, Address rangeBaseAddress, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
+    void registerReadHookOnRange (DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Preprocessing);
+    void registerWriteHookOnRange(DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
 
     bool startListen();
     void stopListen();

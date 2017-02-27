@@ -37,35 +37,35 @@ void libmodbus_cpp::AbstractSlave::addPostMessageHook(libmodbus_cpp::FunctionCod
     getBackend()->addPostMessageHook(funcCode, address, func);
 }
 
-void libmodbus_cpp::AbstractSlave::addUniHook(libmodbus_cpp::DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::HookTime hookTime, libmodbus_cpp::UniHookFunction func)
+void libmodbus_cpp::AbstractSlave::registerHook(libmodbus_cpp::DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::HookTime hookTime, libmodbus_cpp::UniHookFunction func)
 {
     getBackend()->addUniHook(type, AccessMode::Read, rangeBaseAddress, rangeSize, hookTime, func);
     getBackend()->addUniHook(type, AccessMode::Write, rangeBaseAddress, rangeSize, hookTime, func);
 }
 
-void libmodbus_cpp::AbstractSlave::addUniHook(DataType type, libmodbus_cpp::AccessMode accessMode, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::HookTime hookTime, libmodbus_cpp::UniHookFunction func)
+void libmodbus_cpp::AbstractSlave::registerHook(DataType type, libmodbus_cpp::AccessMode accessMode, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::HookTime hookTime, libmodbus_cpp::UniHookFunction func)
 {
     getBackend()->addUniHook(type, accessMode, rangeBaseAddress, rangeSize, hookTime, func);
 }
 
-void libmodbus_cpp::AbstractSlave::addReadHookOnRange(libmodbus_cpp::DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
+void libmodbus_cpp::AbstractSlave::registerReadHookOnRange(libmodbus_cpp::DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
 {
-    addUniHook(type, libmodbus_cpp::AccessMode::Read, rangeBaseAddress, rangeSize, func, hookTime);
+    registerHook(type, libmodbus_cpp::AccessMode::Read, rangeBaseAddress, rangeSize, hookTime, func);
 }
 
-void libmodbus_cpp::AbstractSlave::addWriteHookOnRange(libmodbus_cpp::DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
+void libmodbus_cpp::AbstractSlave::registerWriteHookOnRange(libmodbus_cpp::DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
 {
-    addUniHook(type, libmodbus_cpp::AccessMode::Write, rangeBaseAddress, rangeSize, func, hookTime);
+    registerHook(type, libmodbus_cpp::AccessMode::Write, rangeBaseAddress, rangeSize, hookTime, func);
 }
 
-void libmodbus_cpp::AbstractSlave::addReadHook(DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
+void libmodbus_cpp::AbstractSlave::registerReadHook(DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
 {
-    addReadHookOnRange(type, rangeBaseAddress, 1, func, hookTime);
+    registerReadHookOnRange(type, rangeBaseAddress, 1, func, hookTime);
 }
 
-void libmodbus_cpp::AbstractSlave::addWriteHook(DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
+void libmodbus_cpp::AbstractSlave::registerWriteHook(DataType type, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::UniHookFunction func, libmodbus_cpp::HookTime hookTime)
 {
-        addWriteHookOnRange(type, rangeBaseAddress, 1, func, hookTime);
+        registerWriteHookOnRange(type, rangeBaseAddress, 1, func, hookTime);
 }
 
 bool libmodbus_cpp::AbstractSlave::startListen()
