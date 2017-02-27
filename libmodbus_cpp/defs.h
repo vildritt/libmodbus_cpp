@@ -75,6 +75,7 @@ using Address = uint16_t;
 struct UniHookInfo {
     FunctionCode function;
 
+    DataType type;
     AccessMode accessMode;
     HookTime hookTime;
     Address rangeBaseAddress;

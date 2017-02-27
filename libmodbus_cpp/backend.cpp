@@ -52,9 +52,10 @@ ByteOrder AbstractBackend::checkSystemByteOrder()
 
 using UniHookKey = int;
 
-static UniHookKey uniHookKey(const AccessMode accessMode, const HookTime hookTime)
+static UniHookKey uniHookKey(const DataType type, const AccessMode accessMode, const HookTime hookTime)
 {
     return
+            (static_cast<int>(type) << 16) +
             (static_cast<int>(accessMode) << 8) +
             (static_cast<int>(hookTime));
 }
@@ -161,7 +162,7 @@ public:
 
     void tryProcessUniHook(const UniHookInfo& info) {
 
-        const UniHookKey key = uniHookKey(info.accessMode, info.hookTime);
+        const UniHookKey key = uniHookKey(info.type, info.accessMode, info.hookTime);
 
         const auto hooks = m_uniHook.find(key);
         if (hooks == m_uniHook.end()) {
@@ -197,9 +198,12 @@ public:
         // special case
         if (info.function == MODBUS_FC_WRITE_AND_READ_REGISTERS) {
 
+            info.type = DataType::HoldingRegister;
+
             info.rangeBaseAddress = GET_HDR_U16(2);
             info.rangeSize = GET_HDR_U16(3);
             info.accessMode = AccessMode::Write;
+
             tryProcessUniHook(info);
 
             info.rangeBaseAddress = GET_HDR_U16(0);
@@ -226,6 +230,27 @@ public:
                 return;
         }
 
+        switch(info.function) {
+            case MODBUS_FC_READ_COILS              :
+            case MODBUS_FC_WRITE_MULTIPLE_COILS    :
+            case MODBUS_FC_WRITE_SINGLE_COIL       :
+                info.type = DataType::Coil;
+                break;
+            case MODBUS_FC_READ_DISCRETE_INPUTS    :
+                info.type = DataType::DiscreteInput;
+                break;
+            case MODBUS_FC_READ_HOLDING_REGISTERS  :
+            case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+            case MODBUS_FC_WRITE_SINGLE_REGISTER   :
+            case MODBUS_FC_MASK_WRITE_REGISTER     :
+                info.type = DataType::HoldingRegister;
+                break;
+            case MODBUS_FC_READ_INPUT_REGISTERS    :
+                info.type = DataType::InputRegister;
+                break;
+            default:
+                return;
+        }
         switch(info.function) {
             case MODBUS_FC_READ_COILS              :
             case MODBUS_FC_READ_DISCRETE_INPUTS    :
@@ -318,7 +343,7 @@ void AbstractSlaveBackend::addPostMessageHook(FunctionCode funcCode, Address add
     d_ptr->m_postMessageHooks[funcCode][address] = func;
 }
 
-void AbstractSlaveBackend::addUniHook(AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func)
+void AbstractSlaveBackend::addUniHook(DataType type, AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func)
 {
-    d_ptr->m_uniHook[uniHookKey(accessMode, hookTime)].add(rangeBaseAddress, rangeSize, func);
+    d_ptr->m_uniHook[uniHookKey(type, accessMode, hookTime)].add(rangeBaseAddress, rangeSize, func);
 }
