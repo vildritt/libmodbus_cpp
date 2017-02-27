@@ -50,19 +50,65 @@ ByteOrder AbstractBackend::checkSystemByteOrder()
     return (x.c[1] > x.c[0]) ? ByteOrder::LittleEndian : ByteOrder::BigEndian;
 }
 
+using UniHookKey = int;
+
+static UniHookKey uniHookKey(const AccessMode accessMode, const HookTime hookTime)
+{
+    return
+            (static_cast<int>(accessMode) << 8) +
+            (static_cast<int>(hookTime));
+}
 
 namespace  libmodbus_cpp {
+
+struct AddressRange {
+    AddressRange()
+        : from(1), to(0)
+    {}
+
+    AddressRange(Address from, Address to)
+        : from(from), to(to)
+    {}
+
+    Address from;
+    Address to;
+
+    bool isValid() const {
+        return (to >= from);
+    }
+
+    static AddressRange intersection(const AddressRange& A, const AddressRange& B) {
+
+        if ((B.from > A.to) || (A.from > B.to)) {
+          return AddressRange();
+        } else {
+            return AddressRange(
+                        (A.from < B.from) ? B.from : A.from,
+                        (A.to   > B.to  ) ? B.to   : A.to);
+        }
+    }
+
+    static AddressRange sizedRange(Address from, Address length) {
+        AddressRange res;
+        res.from = from;
+        res.to = (Address)((int)from + (int)length - 1);
+        return res;
+    }
+};
 
 class AbstractSlaveBackendPrivate {
 public:
     using HooksByAddress = QMap<Address, HookFunction>;
     using HooksByFunctionCode = QMap<FunctionCode, HooksByAddress>;
-    using UniHookKey = int;
+
 
     struct UniHookSetup {
-        Address rangeBaseAddress;
-        Address rangeLength;
+        AddressRange range;
         UniHookFunction handler;
+
+        bool isHit(const AddressRange& hitRng) const {
+            return AddressRange::intersection(range, hitRng).isValid();
+        }
     };
 
     struct UniHooks {
@@ -71,19 +117,32 @@ public:
         void add(Address rangeBaseAddress, Address rangeLength, UniHookFunction func) {
             UniHookSetup stp;
             stp.handler = func;
-            stp.rangeBaseAddress = rangeBaseAddress;
-            stp.rangeLength = rangeLength;
+            stp.range = AddressRange::sizedRange(rangeBaseAddress, rangeLength);
             hooks.append(stp);
         }
 
         void compile() {
             qSort(hooks.begin(), hooks.end(), [](const UniHookSetup &L, const UniHookSetup &R) -> bool{
-                if (L.rangeBaseAddress == R.rangeBaseAddress) {
-                    return L.rangeLength < R.rangeLength;
+                if (L.range.from == R.range.from) {
+                    return L.range.to < R.range.to;
                 } else {
-                    return L.rangeBaseAddress < R.rangeBaseAddress;
+                    return L.range.from < R.range.from;
                 }
             });
+        }
+
+        void process(const UniHookInfo& info) {
+            const AddressRange rng = AddressRange::sizedRange(info.rangeBaseAddress, info.rangeSize);
+
+            //TODO 1: improove speed
+
+            const int N = hooks.size();
+            for(int i = 0; i < N; ++i) {
+                const UniHookSetup& hookRange = hooks.at(i);
+                if (hookRange.isHit(rng)) {
+                    hookRange.handler(&info);
+                }
+            }
         }
     };
 
@@ -100,16 +159,94 @@ public:
     }
 
 
-    void checkHookMap(const uint8_t *req, int req_length, const HooksByFunctionCode &hooks) {
-        Q_UNUSED(req_length);
-        const int offset = modbus_get_header_length(q->getCtx());
-        const FunctionCode function = req[offset];
-        const Address address = (req[offset + 1] << 8) + req[offset + 2];
+    void tryProcessUniHook(const UniHookInfo& info) {
 
-        const auto &hooksa = hooks[function];
-        if (hooksa.contains(address)) {
-            hooksa[address]();
+        const UniHookKey key = uniHookKey(info.accessMode, info.hookTime);
+
+        const auto hooks = m_uniHook.find(key);
+        if (hooks == m_uniHook.end()) {
+            return;
         }
+
+        (*hooks).process(info);
+    }
+
+    void checkHookMap(const uint8_t *req, int req_length, const HooksByFunctionCode &oldHooks, HookTime hookTime) {
+
+        Q_UNUSED(req_length);
+
+#define GET_HDR_U16(ID)  ((req[offset + 1 + ((ID) << 1)] << 8) + req[offset + 2 + ((ID) << 1)])
+
+        UniHookInfo info;
+
+        const int offset = modbus_get_header_length(q->getCtx());
+
+        info.function = req[offset];
+        info.rangeBaseAddress = GET_HDR_U16(0);
+
+        // check old style hooks
+        {
+            const auto &addrHooks = oldHooks[info.function];
+            if (addrHooks.contains(info.rangeBaseAddress)) {
+                addrHooks[info.rangeBaseAddress]();
+            }
+        }
+
+        info.hookTime = hookTime;
+
+        // special case
+        if (info.function == MODBUS_FC_WRITE_AND_READ_REGISTERS) {
+
+            info.rangeBaseAddress = GET_HDR_U16(2);
+            info.rangeSize = GET_HDR_U16(3);
+            info.accessMode = AccessMode::Write;
+            tryProcessUniHook(info);
+
+            info.rangeBaseAddress = GET_HDR_U16(0);
+            info.rangeSize = GET_HDR_U16(1);
+            info.accessMode = AccessMode::Read;
+            tryProcessUniHook(info);
+        }
+
+        switch(info.function) {
+            case MODBUS_FC_READ_COILS              :
+            case MODBUS_FC_READ_DISCRETE_INPUTS    :
+            case MODBUS_FC_READ_HOLDING_REGISTERS  :
+            case MODBUS_FC_READ_INPUT_REGISTERS    :
+                info.accessMode = AccessMode::Read;
+                break;
+            case MODBUS_FC_WRITE_SINGLE_COIL       :
+            case MODBUS_FC_WRITE_SINGLE_REGISTER   :
+            case MODBUS_FC_WRITE_MULTIPLE_COILS    :
+            case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+            case MODBUS_FC_MASK_WRITE_REGISTER     :
+                info.accessMode = AccessMode::Write;
+                break;
+            default:
+                return;
+        }
+
+        switch(info.function) {
+            case MODBUS_FC_READ_COILS              :
+            case MODBUS_FC_READ_DISCRETE_INPUTS    :
+            case MODBUS_FC_READ_HOLDING_REGISTERS  :
+            case MODBUS_FC_READ_INPUT_REGISTERS    :
+            case MODBUS_FC_WRITE_MULTIPLE_COILS    :
+            case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+                info.rangeSize = GET_HDR_U16(1);
+                break;
+            case MODBUS_FC_WRITE_SINGLE_COIL       :
+            case MODBUS_FC_WRITE_SINGLE_REGISTER   :
+            case MODBUS_FC_MASK_WRITE_REGISTER     :
+            default:
+                info.rangeSize = 1;
+                return;
+        }
+
+        tryProcessUniHook(info);
+
+#undef GET_HDR_U16
+
     }
 
     void beforeStartListen() {
@@ -134,9 +271,9 @@ AbstractSlaveBackend::AbstractSlaveBackend()
 void AbstractSlaveBackend::processHooks(const uint8_t *req, int req_length, HookTime hookTime)
 {
     if (hookTime == HookTime::Preprocessing) {
-        d_ptr->checkHookMap(req, req_length, d_ptr->m_hooks);
+        d_ptr->checkHookMap(req, req_length, d_ptr->m_hooks, hookTime);
     } else {
-        d_ptr->checkHookMap(req, req_length, d_ptr->m_postMessageHooks);
+        d_ptr->checkHookMap(req, req_length, d_ptr->m_postMessageHooks, hookTime);
     }
 }
 
@@ -179,13 +316,6 @@ void AbstractSlaveBackend::addPreMessageHook(FunctionCode funcCode, Address addr
 void AbstractSlaveBackend::addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func)
 {
     d_ptr->m_postMessageHooks[funcCode][address] = func;
-}
-
-static AbstractSlaveBackendPrivate::UniHookKey uniHookKey(const AccessMode accessMode, const HookTime hookTime)
-{
-    return
-            (static_cast<int>(accessMode) << 8) +
-            (static_cast<int>(hookTime));
 }
 
 void AbstractSlaveBackend::addUniHook(AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func)

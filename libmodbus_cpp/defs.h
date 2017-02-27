@@ -82,7 +82,7 @@ struct UniHookInfo {
 };
 
 using HookFunction = std::function<void(void)>;
-using UniHookFunction = std::function<void(UniHookInfo* info)>;
+using UniHookFunction = std::function<void(const UniHookInfo* info)>;
 
 // exceptions ==============================================================
 using Exception = std::runtime_error;
