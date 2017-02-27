@@ -30,6 +30,7 @@ public:
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addUniHook(AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
 
     bool startListen();
     void stopListen();

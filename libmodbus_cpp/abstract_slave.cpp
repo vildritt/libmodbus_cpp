@@ -37,6 +37,11 @@ void libmodbus_cpp::AbstractSlave::addPostMessageHook(libmodbus_cpp::FunctionCod
     getBackend()->addPostMessageHook(funcCode, address, func);
 }
 
+void libmodbus_cpp::AbstractSlave::addUniHook(libmodbus_cpp::AccessMode accessMode, libmodbus_cpp::Address rangeBaseAddress, libmodbus_cpp::Address rangeSize, libmodbus_cpp::HookTime hookTime, libmodbus_cpp::UniHookFunction func)
+{
+    getBackend()->addUniHook(accessMode, rangeBaseAddress, rangeSize, hookTime, func);
+}
+
 bool libmodbus_cpp::AbstractSlave::startListen()
 {
     return getBackend()->startListen();

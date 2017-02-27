@@ -63,20 +63,13 @@ private:
     static ByteOrder checkSystemByteOrder();
 };
 
+class AbstractSlaveBackendPrivate;
 class AbstractSlaveBackend : public AbstractBackend
 {
-    using HooksByAddress = QMap<Address, HookFunction>;
-    using HooksByFunctionCode = QMap<FunctionCode, HooksByAddress>;
-
-    HooksByFunctionCode m_hooks;
-    HooksByFunctionCode m_postMessageHooks;
-    modbus_mapping_t *m_map = Q_NULLPTR;
-
 protected:
     AbstractSlaveBackend();
 
-    void checkHooks(const uint8_t *req, int req_length);
-    void checkPostMessageHooks(const uint8_t *req, int req_length);
+    void processHooks(const uint8_t *req, int req_length, HookTime hookTime);
 
     virtual bool doStartListen() = 0;
     virtual void doStopListen() = 0;
@@ -84,9 +77,7 @@ protected:
 public:
     ~AbstractSlaveBackend() override;
 
-    inline modbus_mapping_t *getMap() {
-        return m_map;
-    }
+    modbus_mapping_t *getMap();
 
     bool initMap(int holdingBitsCount, int inputBitsCount, int holdingRegistersCount, int inputRegistersCount);
     bool initRegisterMap(int holdingRegistersCount, int inputRegistersCount);
@@ -96,8 +87,11 @@ public:
 
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
-    void checkHookMap(const uint8_t *req, int req_length, const HooksByFunctionCode &hooks);
-
+    void addUniHook(AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
+private:
+    friend class AbstractSlaveBackendPrivate;
+    QScopedPointer<AbstractSlaveBackendPrivate> ad_ptr;
+    AbstractSlaveBackendPrivate* d_ptr;
 };
 
 }

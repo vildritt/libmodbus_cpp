@@ -58,10 +58,31 @@ struct RawResult {
     }
 };
 
+enum class AccessMode {
+    Read,
+    Write
+};
+
+enum class HookTime {
+    Preprocessing,
+    Postprocessing
+};
+
 // hooks ===================================================================
 using FunctionCode = uint8_t;
 using Address = uint16_t;
+
+struct UniHookInfo {
+    FunctionCode function;
+
+    AccessMode accessMode;
+    HookTime hookTime;
+    Address rangeBaseAddress;
+    Address rangeSize;
+};
+
 using HookFunction = std::function<void(void)>;
+using UniHookFunction = std::function<void(UniHookInfo* info)>;
 
 // exceptions ==============================================================
 using Exception = std::runtime_error;
