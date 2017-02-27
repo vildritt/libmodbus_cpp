@@ -25,7 +25,10 @@ public:
     bool initMap(int holdingBitsCount, int inputBitsCount, int holdingRegistersCount, int inputRegistersCount);
     bool setAddress(uint8_t address);
     bool setDefaultAddress();
+
+    //[[deprecated("use addPreMessageHook insted")]]
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
 
     bool startListen();
