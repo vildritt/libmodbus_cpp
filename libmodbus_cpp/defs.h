@@ -72,14 +72,62 @@ enum class HookTime {
 using FunctionCode = uint8_t;
 using Address = uint16_t;
 
+struct AddressRange {
+    AddressRange()
+        : from(1), to(0)
+    {}
+
+    AddressRange(Address from, Address to)
+        : from(from), to(to)
+    {}
+
+    Address from;
+    Address to;
+
+    bool isValid() const {
+        return (to >= from);
+    }
+
+    AddressRange& shift(int da) {
+        from += da;
+        to   += da;
+        return *this;
+    }
+
+    static AddressRange intersection(const AddressRange& A, const AddressRange& B) {
+
+        if ((B.from > A.to) || (A.from > B.to)) {
+          return AddressRange();
+        } else {
+            return AddressRange(
+                        (A.from < B.from) ? B.from : A.from,
+                        (A.to   > B.to  ) ? B.to   : A.to);
+        }
+    }
+
+    bool intersectsWith(const AddressRange& inst) const {
+        return intersection(*this, inst).isValid();
+    }
+
+    static AddressRange fromSizedRange(Address from, Address length) {
+        AddressRange res;
+        res.from = from;
+        res.to = (Address)((int)from + (int)length - 1);
+        return res;
+    }
+};
+
 struct UniHookInfo {
     FunctionCode function;
 
     DataType type;
     AccessMode accessMode;
     HookTime hookTime;
+
     Address rangeBaseAddress;
     Address rangeSize;
+
+    AddressRange range;
 };
 
 using HookFunction = std::function<void(void)>;

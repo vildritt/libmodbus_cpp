@@ -62,40 +62,6 @@ static UniHookKey uniHookKey(const DataType type, const AccessMode accessMode, c
 
 namespace  libmodbus_cpp {
 
-struct AddressRange {
-    AddressRange()
-        : from(1), to(0)
-    {}
-
-    AddressRange(Address from, Address to)
-        : from(from), to(to)
-    {}
-
-    Address from;
-    Address to;
-
-    bool isValid() const {
-        return (to >= from);
-    }
-
-    static AddressRange intersection(const AddressRange& A, const AddressRange& B) {
-
-        if ((B.from > A.to) || (A.from > B.to)) {
-          return AddressRange();
-        } else {
-            return AddressRange(
-                        (A.from < B.from) ? B.from : A.from,
-                        (A.to   > B.to  ) ? B.to   : A.to);
-        }
-    }
-
-    static AddressRange sizedRange(Address from, Address length) {
-        AddressRange res;
-        res.from = from;
-        res.to = (Address)((int)from + (int)length - 1);
-        return res;
-    }
-};
 
 class AbstractSlaveBackendPrivate {
 public:
@@ -108,7 +74,7 @@ public:
         UniHookFunction handler;
 
         bool isHit(const AddressRange& hitRng) const {
-            return AddressRange::intersection(range, hitRng).isValid();
+            return range.intersectsWith(hitRng);
         }
     };
 
@@ -118,7 +84,7 @@ public:
         void add(Address rangeBaseAddress, Address rangeLength, UniHookFunction func) {
             UniHookSetup stp;
             stp.handler = func;
-            stp.range = AddressRange::sizedRange(rangeBaseAddress, rangeLength);
+            stp.range = AddressRange::fromSizedRange(rangeBaseAddress, rangeLength);
             hooks.append(stp);
         }
 
@@ -132,15 +98,15 @@ public:
             });
         }
 
-        void process(const UniHookInfo& info) {
-            const AddressRange rng = AddressRange::sizedRange(info.rangeBaseAddress, info.rangeSize);
+        void process(UniHookInfo& info) {
+            info.range = AddressRange::fromSizedRange(info.rangeBaseAddress, info.rangeSize);
 
             //TODO 1: improove speed
 
             const int N = hooks.size();
             for(int i = 0; i < N; ++i) {
                 const UniHookSetup& hookRange = hooks.at(i);
-                if (hookRange.isHit(rng)) {
+                if (hookRange.isHit(info.range)) {
                     hookRange.handler(&info);
                 }
             }
@@ -160,7 +126,7 @@ public:
     }
 
 
-    void tryProcessUniHook(const UniHookInfo& info) {
+    void tryProcessUniHook(UniHookInfo& info) {
 
         const UniHookKey key = uniHookKey(info.type, info.accessMode, info.hookTime);
 
