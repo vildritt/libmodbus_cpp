@@ -66,9 +66,9 @@ void AbstractSlaveBackend::checkPostMessageHooks(const uint8_t *req, int req_len
 void AbstractSlaveBackend::checkHookMap(const uint8_t *req, int req_length, const AbstractSlaveBackend::HooksByFunctionCode &hookMap)
 {
     Q_UNUSED(req_length);
-    int offset = modbus_get_header_length(getCtx());
-    FunctionCode function = req[offset];
-    Address address = (req[offset + 1] << 8) + req[offset + 2];
+    const int offset = modbus_get_header_length(getCtx());
+    const FunctionCode function = req[offset];
+    const Address address = (req[offset + 1] << 8) + req[offset + 2];
 
     const auto &hooks = hookMap[function];
     if (hooks.contains(address))
