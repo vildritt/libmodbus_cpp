@@ -171,7 +171,7 @@ void AbstractSlaveBackend::stopListen()
     doStopListen();
 }
 
-void AbstractSlaveBackend::addHook(FunctionCode funcCode, Address address, HookFunction func)
+void AbstractSlaveBackend::addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func)
 {
     d_ptr->m_hooks[funcCode][address] = func;
 }

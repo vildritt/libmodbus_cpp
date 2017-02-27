@@ -24,12 +24,12 @@ bool libmodbus_cpp::AbstractSlave::setDefaultAddress()
 
 void libmodbus_cpp::AbstractSlave::addHook(libmodbus_cpp::FunctionCode funcCode, libmodbus_cpp::Address address, libmodbus_cpp::HookFunction func)
 {
-    getBackend()->addHook(funcCode, address, func);
+    getBackend()->addPreMessageHook(funcCode, address, func);
 }
 
 void libmodbus_cpp::AbstractSlave::addPreMessageHook(libmodbus_cpp::FunctionCode funcCode, libmodbus_cpp::Address address, libmodbus_cpp::HookFunction func)
 {
-    getBackend()->addHook(funcCode, address, func);
+    getBackend()->addPreMessageHook(funcCode, address, func);
 }
 
 void libmodbus_cpp::AbstractSlave::addPostMessageHook(libmodbus_cpp::FunctionCode funcCode, libmodbus_cpp::Address address, libmodbus_cpp::HookFunction func)
