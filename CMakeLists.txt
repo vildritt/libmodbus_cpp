@@ -102,3 +102,7 @@ endif()
 set_source_files_properties(libmodbus/libmodbus/src/modbus-tcp.c PROPERTIES COMPILE_FLAGS -w)
 
 
+install (
+    TARGETS modbus_cpp modbus
+    DESTINATION lib)
+
