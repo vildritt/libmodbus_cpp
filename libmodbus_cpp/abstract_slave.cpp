@@ -161,39 +161,23 @@ void libmodbus_cpp::AbstractSlave::stopListen()
 }
 
 void libmodbus_cpp::AbstractSlave::setValueToCoil(uint16_t address, bool value) {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalWriteError("map was not inited");
-    if (map->nb_bits <= address)
-        throw LocalWriteError("wrong address");
-    setValueToTable(map->tab_bits, address, value);
+    const auto m = getMapper<DataType::Coil>(address);
+    setValueToTable(m.map->tab_bits, address, value);
 }
 
 bool libmodbus_cpp::AbstractSlave::getValueFromCoil(uint16_t address) {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalReadError("map was not inited");
-    if (map->nb_bits <= address)
-        throw LocalReadError("wrong address");
-    return getValueFromTable<bool>(map->tab_bits, address);
+    const auto m = getMapper<DataType::Coil>(address);
+    return getValueFromTable<bool>(m.map->tab_bits, address);
 }
 
 void libmodbus_cpp::AbstractSlave::setValueToDiscreteInput(uint16_t address, bool value)
 {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalWriteError("map was not inited");
-    if (map->nb_input_bits <= address)
-        throw LocalWriteError("wrong address");
-    setValueToTable(map->tab_input_bits, address, value);
+    const auto m = getMapper<DataType::DiscreteInput>(address);
+    setValueToTable(m.map->tab_input_bits, address, value);
 }
 
 bool libmodbus_cpp::AbstractSlave::getValueFromDiscreteInput(uint16_t address)
 {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalReadError("map was not inited");
-    if (map->nb_input_bits <= address)
-        throw LocalReadError("wrong address");
-    return getValueFromTable<bool>(map->tab_input_bits, address);
+    const auto m = getMapper<DataType::DiscreteInput>(address);
+    return getValueFromTable<bool>(m.map->tab_input_bits, address);
 }

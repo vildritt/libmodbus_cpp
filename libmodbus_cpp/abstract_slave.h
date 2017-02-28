@@ -6,6 +6,7 @@
 #include <iterator>
 #include "backend.h"
 #include "defs.h"
+#include "mapping_wrapper.h"
 
 namespace libmodbus_cpp {
 
@@ -46,6 +47,8 @@ public:
     bool startListen();
     void stopListen();
 
+    /// data access
+
     void setValueToCoil(uint16_t address, bool value);
     bool getValueFromCoil(uint16_t address);
 
@@ -63,6 +66,9 @@ public:
     ValueType getValueFromInputRegister(uint16_t address);
 
 private:
+
+    template<DataType T>
+    MappingWrapper<T> getMapper(uint16_t address);
 
     template<typename ValueType, typename TableType>
     void setValueToTable(TableType *table, uint16_t address, const ValueType &value) {
@@ -93,46 +99,53 @@ private:
     }
 };
 
+
 template<typename ValueType>
 void AbstractSlave::setValueToHoldingRegister(uint16_t address, ValueType value) {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalWriteError("map was not inited");
-    if (map->nb_registers <= address)
-        throw LocalWriteError("wrong address");
-    setValueToTable(map->tab_registers, address, value);
+    const auto m = getMapper<DataType::HoldingRegister>(address);
+    setValueToTable(m.map->tab_registers, address, value);
 }
+
 
 template<typename ValueType>
 ValueType AbstractSlave::getValueFromHoldingRegister(uint16_t address) {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalReadError("map was not inited");
-    if (map->nb_registers <= address)
-        throw LocalReadError("wrong address");
-    return getValueFromTable<ValueType>(map->tab_registers, address);
+    const auto m = getMapper<DataType::HoldingRegister>(address);
+    return getValueFromTable<ValueType>(m.map->tab_registers, address);
 }
+
 
 template<typename ValueType>
 void AbstractSlave::setValueToInputRegister(uint16_t address, ValueType value) {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalWriteError("map was not inited");
-    if (map->nb_input_registers <= address)
-        throw LocalWriteError("wrong address");
-    setValueToTable(map->tab_input_registers, address, value);
+    const auto m = getMapper<DataType::InputRegister>(address);
+    setValueToTable(m.map->tab_input_registers, address, value);
 }
+
 
 template<typename ValueType>
 ValueType AbstractSlave::getValueFromInputRegister(uint16_t address) {
-    modbus_mapping_t * map = getBackend()->getMap();
-    if (!map)
-        throw LocalReadError("map was not inited");
-    if (map->nb_input_registers <= address)
-        throw LocalReadError("wrong address");
-    return getValueFromTable<ValueType>(map->tab_input_registers, address);
+    const auto m = getMapper<DataType::InputRegister>(address);
+    return getValueFromTable<ValueType>(m.map->tab_input_registers, address);
 }
 
+
+template<DataType T>
+MappingWrapper<T> AbstractSlave::getMapper(uint16_t address) {
+
+    const MappingWrapper<T> res(getBackend()->getMap());
+
+    if (!res.isAssigend()) {
+        throw LocalReadError("map was not inited");
+    }
+
+    if (res.count() <= address) {
+        throw LocalReadError("wrong address");
+    }
+
+    return res;
 }
+
+
+} // ns
+
 
 #endif // LIBMODBUS_CPP_ABSTRACTSLAVE_H
