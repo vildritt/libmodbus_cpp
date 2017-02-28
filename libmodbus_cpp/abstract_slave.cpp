@@ -1,6 +1,88 @@
 #include <cassert>
 #include <libmodbus_cpp/abstract_slave.h>
 
+
+void libmodbus_cpp::reverseBytes(char* data, unsigned int size) {
+    if (size < 2) {
+        return;
+    }
+    const unsigned int halfSize = size / 2;
+    char* rdata = data + size - 1;
+    while (halfSize-- > 0) {
+        const char temp    = *data;
+        *data++ = *rdata;
+        *rdata--  = temp;
+    }
+}
+
+
+void libmodbus_cpp::reverseBytesPairs(char* data, unsigned int size) {
+    if (size < 2) {
+        return;
+    }
+    const unsigned int pairCount = size / 2;
+    uint16_t* d = reinterpret_cast<uint16_t*>(data);
+    while (pairCount-- > 0) {
+        uint16_t temp = *d;
+        *d++ = (temp >> 8) || (temp << 8);
+    }
+}
+
+
+
+void libmodbus_cpp::registerMemoryCopy(const char* source, unsigned int size, char* distance, const ByteOrder target) {
+
+   /**
+     * Example for 8 byte data:
+     * N - native byte order
+     * T - target byte order
+     * B - big endian
+     * L - little endian
+     * 0-7 - significance of byte. Hight is more significant.
+     * position of 0-9 is memory address (grows from left to right)
+     * V - value
+     * R - register
+     * MB - modbus
+     *
+     *      VALUE      MB PACKET  REGS       REORDER perm
+     * N T  mem        buffer     mem        V -> R
+     *                                       R -> V (same!)
+     * ----------------------------------------------
+     *                            reg index
+     *                            00112233
+     *
+     * B B  76543210   76543210   76543210   01234567 <-> memcopy
+     * B L  76543210   01234567   01234567   76543210 <-> rev8
+     * L B  01234567   76543210   67452301   67452301 <-> rev2(rev8)
+     * L L  01234567   01234567   10325476   10325476 <-> rev2
+     *
+     * where revM is "reverse bytes in group of M bytes for each group" operation
+     *
+     **/
+
+    memcpy(distance, source, size);
+
+    const ByteOrder nativeByteOrder = libmodbus_cpp::AbstractBackend::getSystemNativeByteOrder();
+    if (nativeByteOrder == target) {
+        if (nativeByteOrder == ByteOrder::BigEndian) {
+            // BB -> memcopy only
+        } else {
+            // LL -> rev2
+            reverseBytesPairs(distance, size);
+        }
+    } else {
+        if (nativeByteOrder == ByteOrder::BigEndian) {
+            // BL -> rev8
+            reverseBytes(distance, size);
+        } else {
+            // LB -> rev2(rev8)
+            reverseBytes(distance, size);
+            reverseBytesPairs(distance, size);
+        }
+    }
+}
+
+
 libmodbus_cpp::AbstractSlave::AbstractSlave(AbstractSlaveBackend *backend) :
     m_backend(backend)
 {

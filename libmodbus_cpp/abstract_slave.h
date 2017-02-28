@@ -9,6 +9,10 @@
 
 namespace libmodbus_cpp {
 
+void reverseBytes(char* data, unsigned int size);
+void reverseBytesPairs(char* data, unsigned int size);
+void mb_memcopy(const char* source, unsigned int size, char* distance, const ByteOrder target);
+
 class AbstractSlave
 {
     QScopedPointer<AbstractSlaveBackend> m_backend;
