@@ -31,7 +31,7 @@ public:
     bool setAddress(uint8_t address);
     bool setDefaultAddress();
 
-    //[[deprecated("use addPreMessageHook insted")]]
+    //[[deprecated("use addPreMessageHook insted or register* methods")]]
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
