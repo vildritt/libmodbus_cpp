@@ -10,9 +10,10 @@
 
 namespace libmodbus_cpp {
 
-void reverseBytes(char* data, unsigned int size);
-void reverseBytesPairs(char* data, unsigned int size);
-void registerMemoryCopy(const char* source, unsigned int size, char* distance, const ByteOrder target);
+// modbus data model impl io with app memory
+void registerMemoryCopy(const void *source, unsigned int size, void *distance, const ByteOrder target);
+void setModbusBit(uint8_t *table, Address address, bool value);
+bool getModbusBit(uint8_t *table, uint16_t address);
 
 
 class AbstractSlave
@@ -55,101 +56,72 @@ public:
 
     /// data access
 
-    void setValueToCoil(uint16_t address, bool value);
-    bool getValueFromCoil(uint16_t address);
+    // bits
 
-    void setValueToDiscreteInput(uint16_t address, bool value);
-    bool getValueFromDiscreteInput(uint16_t address);
+    template<DataType dataType>
+    void setBit(Address address, bool value) {
+        const auto m = getBackend()->getMapper<dataType>(address);
+        setModbusBit(m.bitTable(), address, value);
+    }
+
+    template<DataType dataType>
+    bool getBit(Address address) {
+        const auto m = getBackend()->getMapper<dataType>(address);
+        return getModbusBit(m.bitTable(), address);
+    }
+
+    // registers
+
+    template<typename ValueType, DataType dataType>
+    void      setValue(Address address, ValueType value) {
+        setValueToRegs(getBackend()->getMapper<dataType>(address).regTable(), address, value);
+    }
+
+    template<typename ValueType, DataType dataType>
+    ValueType getValue(Address address) {
+        return getValueFromRegs<ValueType>(getBackend()->getMapper<dataType>(address).regTable(), address);
+    }
+
+    // NOTE: old intf but also it's needed to ceate all template funcs!
+
+    void setValueToCoil(Address address, bool value);
+    bool getValueFromCoil(Address address);
+
+    void setValueToDiscreteInput(Address address, bool value);
+    bool getValueFromDiscreteInput(Address address);
 
     template<typename ValueType>
-    void setValueToHoldingRegister(uint16_t address, ValueType value);
+    void setValueToHoldingRegister(Address address, ValueType value) {
+        setValue<ValueType, DataType::HoldingRegister>(address, value);
+    }
     template<typename ValueType>
-    ValueType getValueFromHoldingRegister(uint16_t address);
-
+    ValueType getValueFromHoldingRegister(Address address) {
+        return getValue<ValueType, DataType::HoldingRegister>(address);
+    }
     template<typename ValueType>
-    void setValueToInputRegister(uint16_t address, ValueType value);
+    void setValueToInputRegister(Address address, ValueType value) {
+        setValue<ValueType, DataType::InputRegister>(address, value);
+    }
     template<typename ValueType>
-    ValueType getValueFromInputRegister(uint16_t address);
+    ValueType getValueFromInputRegister(Address address) {
+        return getValue<ValueType, DataType::InputRegister>(address);
+    }
 
 private:
 
-    template<DataType T>
-    MappingWrapper<T> getMapper(uint16_t address);
-
-    template<typename ValueType, typename TableType>
-    void setValueToTable(TableType *table, uint16_t address, const ValueType &value) {
-        int offset = sizeof(TableType) * address;
-        if (getBackend()->doesSystemNativeByteOrderMatchTarget())
-            std::memcpy(reinterpret_cast<uint8_t*>(table) + offset, &value, sizeof(ValueType));
-        else {
-            const uint8_t *valueAsArray = reinterpret_cast<const uint8_t*>(&value);
-            int size = sizeof(ValueType);
-            for (int i = size - 1, j = 0; i >= 0; --i, ++j)
-                *(reinterpret_cast<uint8_t*>(table) + offset + j) = valueAsArray[i];
-        }
+    template<typename ValueType>
+    void setValueToRegs(uint16_t *table, uint16_t address, const ValueType &value) {
+        registerMemoryCopy(&value,sizeof(ValueType), table + address, getBackend()->getTargetByteOrder());
     }
 
-    template<typename ValueType, typename TableType>
-    ValueType getValueFromTable(TableType *table, uint16_t address) {
-        ValueType res(0);
-        int offset = sizeof(TableType) * address;
-        if (getBackend()->doesSystemNativeByteOrderMatchTarget())
-            std::memcpy(&res, reinterpret_cast<uint8_t*>(table) + offset, sizeof(ValueType));
-        else {
-            uint8_t *resAsArray = reinterpret_cast<uint8_t*>(&res);
-            int size = sizeof(ValueType);
-            for (int i = size - 1, j = 0; i >= 0; --i, ++j)
-                resAsArray[i] = *(reinterpret_cast<uint8_t*>(table) + offset + j);
-        }
+    template<typename ValueType>
+    ValueType getValueFromRegs(uint16_t *table, uint16_t address) {
+        ValueType res;
+        registerMemoryCopy(table + address, sizeof(ValueType), &res, getBackend()->getTargetByteOrder());
         return res;
     }
+
 };
-
-
-template<typename ValueType>
-void AbstractSlave::setValueToHoldingRegister(uint16_t address, ValueType value) {
-    const auto m = getMapper<DataType::HoldingRegister>(address);
-    setValueToTable(m.map->tab_registers, address, value);
-}
-
-
-template<typename ValueType>
-ValueType AbstractSlave::getValueFromHoldingRegister(uint16_t address) {
-    const auto m = getMapper<DataType::HoldingRegister>(address);
-    return getValueFromTable<ValueType>(m.map->tab_registers, address);
-}
-
-
-template<typename ValueType>
-void AbstractSlave::setValueToInputRegister(uint16_t address, ValueType value) {
-    const auto m = getMapper<DataType::InputRegister>(address);
-    setValueToTable(m.map->tab_input_registers, address, value);
-}
-
-
-template<typename ValueType>
-ValueType AbstractSlave::getValueFromInputRegister(uint16_t address) {
-    const auto m = getMapper<DataType::InputRegister>(address);
-    return getValueFromTable<ValueType>(m.map->tab_input_registers, address);
-}
-
-
-template<DataType T>
-MappingWrapper<T> AbstractSlave::getMapper(uint16_t address) {
-
-    const MappingWrapper<T> res(getBackend()->getMap());
-
-    if (!res.isAssigend()) {
-        throw LocalReadError("map was not inited");
-    }
-
-    if (res.count() <= address) {
-        throw LocalReadError("wrong address");
-    }
-
-    return res;
-}
-
 
 } // ns
 

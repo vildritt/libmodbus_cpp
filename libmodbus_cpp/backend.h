@@ -11,6 +11,7 @@
 #include <modbus/modbus-rtu.h>
 #include <modbus/modbus-tcp.h>
 #include "defs.h"
+#include "mapping_wrapper.h"
 
 namespace libmodbus_cpp {
 
@@ -84,7 +85,9 @@ protected:
 public:
     ~AbstractSlaveBackend() override;
 
-    modbus_mapping_t *getMap();
+    modbus_mapping_t *getMap() const;
+    template<DataType T>
+    MappingWrapper<T> getMapper(Address address) const;
 
     bool initMap(int holdingBitsCount, int inputBitsCount, int holdingRegistersCount, int inputRegistersCount);
     bool initRegisterMap(int holdingRegistersCount, int inputRegistersCount);
@@ -100,6 +103,24 @@ private:
     QScopedPointer<AbstractSlaveBackendPrivate> ad_ptr;
     AbstractSlaveBackendPrivate* d_ptr;
 };
+
+
+template<DataType T>
+MappingWrapper<T> AbstractSlaveBackend::getMapper(Address address) const {
+
+    const MappingWrapper<T> res(getMap());
+
+    if (!res.isAssigend()) {
+        throw LocalReadError("map was not inited");
+    }
+
+    if (res.count() <= address) {
+        throw LocalReadError("wrong address");
+    }
+
+    return res;
+}
+
 
 }
 

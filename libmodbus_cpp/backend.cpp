@@ -283,7 +283,7 @@ AbstractSlaveBackend::~AbstractSlaveBackend()
     modbus_mapping_free(d_ptr->m_map);
 }
 
-modbus_mapping_t *AbstractSlaveBackend::getMap() {
+modbus_mapping_t *AbstractSlaveBackend::getMap() const {
     return d_ptr->m_map;
 }
 

@@ -26,6 +26,12 @@ struct MappingWrapper {
         void *table() const  { \
             return map->tab_ ## name; \
         } \
+        uint16_t *regTable() const  { \
+            return reinterpret_cast<uint16_t *>(map->tab_ ## name); \
+        } \
+        uint8_t *bitTable() const  { \
+            return reinterpret_cast<uint8_t *>(map->tab_ ## name); \
+        } \
         bool  isAssigend() const { \
             return map != nullptr; \
         } \

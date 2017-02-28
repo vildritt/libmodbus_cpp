@@ -4,8 +4,10 @@
 
 /// misc
 
+namespace libmodbus_cpp {
 
-void libmodbus_cpp::reverseBytes(char* data, unsigned int size) {
+
+void reverseBytes(char* data, unsigned int size) {
     if (size < 2) {
         return;
     }
@@ -19,7 +21,7 @@ void libmodbus_cpp::reverseBytes(char* data, unsigned int size) {
 }
 
 
-void libmodbus_cpp::reverseBytesPairs(char* data, unsigned int size) {
+void reverseBytesPairs(char* data, unsigned int size) {
     if (size < 2) {
         return;
     }
@@ -32,7 +34,20 @@ void libmodbus_cpp::reverseBytesPairs(char* data, unsigned int size) {
 }
 
 
-void libmodbus_cpp::registerMemoryCopy(const char* source, unsigned int size, char* distance, const ByteOrder target) {
+void setModbusBit(uint8_t *table, Address address, bool value) {
+    table[address] = value ? 1 : 0;
+}
+
+
+bool getModbusBit(uint8_t *table, uint16_t address) {
+    return table[address] != 0;
+}
+
+
+} // ns
+
+
+void libmodbus_cpp::registerMemoryCopy(const void* source, unsigned int size, void* distance, const ByteOrder target) {
 
    /**
      * Example for 8 byte data:
@@ -64,22 +79,24 @@ void libmodbus_cpp::registerMemoryCopy(const char* source, unsigned int size, ch
 
     memcpy(distance, source, size);
 
+    char* d = reinterpret_cast<char*>(distance);
+
     const ByteOrder nativeByteOrder = libmodbus_cpp::AbstractBackend::getSystemNativeByteOrder();
     if (nativeByteOrder == target) {
         if (nativeByteOrder == ByteOrder::BigEndian) {
             // BB -> memcopy only
         } else {
             // LL -> rev2
-            reverseBytesPairs(distance, size);
+            reverseBytesPairs(d, size);
         }
     } else {
         if (nativeByteOrder == ByteOrder::BigEndian) {
             // BL -> rev8
-            reverseBytes(distance, size);
+            reverseBytes(d, size);
         } else {
             // LB -> rev2(rev8)
-            reverseBytes(distance, size);
-            reverseBytesPairs(distance, size);
+            reverseBytes(d, size);
+            reverseBytesPairs(d, size);
         }
     }
 }
@@ -189,27 +206,23 @@ void libmodbus_cpp::AbstractSlave::stopListen()
 /// libmodbus_cpp::AbstractSlave data access
 
 
-void libmodbus_cpp::AbstractSlave::setValueToCoil(uint16_t address, bool value) {
-    const auto m = getMapper<DataType::Coil>(address);
-    setValueToTable(m.map->tab_bits, address, value);
+void libmodbus_cpp::AbstractSlave::setValueToCoil(Address address, bool value) {
+    setBit<DataType::Coil>(address, value);
 }
 
 
-bool libmodbus_cpp::AbstractSlave::getValueFromCoil(uint16_t address) {
-    const auto m = getMapper<DataType::Coil>(address);
-    return getValueFromTable<bool>(m.map->tab_bits, address);
+bool libmodbus_cpp::AbstractSlave::getValueFromCoil(Address address) {
+    return getBit<DataType::Coil>(address);
 }
 
 
-void libmodbus_cpp::AbstractSlave::setValueToDiscreteInput(uint16_t address, bool value)
+void libmodbus_cpp::AbstractSlave::setValueToDiscreteInput(Address address, bool value)
 {
-    const auto m = getMapper<DataType::DiscreteInput>(address);
-    setValueToTable(m.map->tab_input_bits, address, value);
+    setBit<DataType::DiscreteInput>(address, value);
 }
 
 
-bool libmodbus_cpp::AbstractSlave::getValueFromDiscreteInput(uint16_t address)
+bool libmodbus_cpp::AbstractSlave::getValueFromDiscreteInput(Address address)
 {
-    const auto m = getMapper<DataType::DiscreteInput>(address);
-    return getValueFromTable<bool>(m.map->tab_input_bits, address);
+    return getBit<DataType::DiscreteInput>(address);
 }
