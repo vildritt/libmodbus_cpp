@@ -9,9 +9,19 @@ AbstractBackend::AbstractBackend()
 {
 }
 
-bool AbstractBackend::doesSystemByteOrderMatchTarget() const
+bool AbstractBackend::doesSystemNativeByteOrderMatchTarget() const
 {
     return targetByteOrder == systemByteOrder;
+}
+
+void AbstractBackend::setTargetByteOrder(ByteOrder order)
+{
+    targetByteOrder = order;
+}
+
+ByteOrder AbstractBackend::getTargetByteOrder() const
+{
+    return targetByteOrder;
 }
 
 AbstractBackend::~AbstractBackend()
@@ -41,7 +51,7 @@ void AbstractBackend::closeConnection()
     modbus_close(getCtx());
 }
 
-ByteOrder AbstractBackend::checkSystemByteOrder()
+ByteOrder AbstractBackend::getSystemNativeByteOrder()
 {
     union {
         unsigned short s;

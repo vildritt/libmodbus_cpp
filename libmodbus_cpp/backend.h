@@ -40,7 +40,7 @@ class AbstractBackend
 {
     modbus_t *m_ctx = Q_NULLPTR;
     ByteOrder targetByteOrder = ByteOrder::LittleEndian;
-    ByteOrder systemByteOrder = checkSystemByteOrder();
+    ByteOrder systemByteOrder = getSystemNativeByteOrder();
 
 protected:
     AbstractBackend();
@@ -57,10 +57,17 @@ public:
     bool openConnection();
     void closeConnection();
 
-    bool doesSystemByteOrderMatchTarget() const;
+    bool doesSystemNativeByteOrderMatchTarget() const;
 
-private:
-    static ByteOrder checkSystemByteOrder();
+    /**
+     * @brief target byte order determines byte order of multibyte data stored in modbus packet(!) buffer
+     * It's not a byte order of internal memeory storage or something like this, it is only about PACKET buffer
+     * Client works only with modus packets so it must be interesed in order of packet bytes only
+     */
+    void      setTargetByteOrder(ByteOrder order);
+    ByteOrder getTargetByteOrder() const;
+
+    static ByteOrder getSystemNativeByteOrder();
 };
 
 class AbstractSlaveBackendPrivate;

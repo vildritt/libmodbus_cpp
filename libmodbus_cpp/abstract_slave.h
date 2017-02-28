@@ -62,10 +62,11 @@ public:
     ValueType getValueFromInputRegister(uint16_t address);
 
 private:
+
     template<typename ValueType, typename TableType>
     void setValueToTable(TableType *table, uint16_t address, const ValueType &value) {
         int offset = sizeof(TableType) * address;
-        if (getBackend()->doesSystemByteOrderMatchTarget())
+        if (getBackend()->doesSystemNativeByteOrderMatchTarget())
             std::memcpy(reinterpret_cast<uint8_t*>(table) + offset, &value, sizeof(ValueType));
         else {
             const uint8_t *valueAsArray = reinterpret_cast<const uint8_t*>(&value);
@@ -79,7 +80,7 @@ private:
     ValueType getValueFromTable(TableType *table, uint16_t address) {
         ValueType res(0);
         int offset = sizeof(TableType) * address;
-        if (getBackend()->doesSystemByteOrderMatchTarget())
+        if (getBackend()->doesSystemNativeByteOrderMatchTarget())
             std::memcpy(&res, reinterpret_cast<uint8_t*>(table) + offset, sizeof(ValueType));
         else {
             uint8_t *resAsArray = reinterpret_cast<uint8_t*>(&res);
