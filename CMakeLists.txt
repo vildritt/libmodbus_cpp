@@ -99,5 +99,6 @@ if(WIN32)
     target_link_libraries(modbus_cpp modbus)
 endif()
 
+set_source_files_properties(libmodbus/libmodbus/src/modbus-tcp.c PROPERTIES COMPILE_FLAGS -w)
 
 
