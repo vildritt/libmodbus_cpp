@@ -28,9 +28,13 @@ protected:
 public:
     virtual ~AbstractSlave() {}
 
+    /// setup
+
     bool initMap(int holdingBitsCount, int inputBitsCount, int holdingRegistersCount, int inputRegistersCount);
     bool setAddress(uint8_t address);
     bool setDefaultAddress();
+
+    /// hooks
 
     //[[deprecated("use addPreMessageHook insted or register* methods")]]
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
@@ -43,6 +47,8 @@ public:
     void registerWriteHook(DataType type, Address rangeBaseAddress, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
     void registerReadHookOnRange (DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Preprocessing);
     void registerWriteHookOnRange(DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
+
+    /// activation
 
     bool startListen();
     void stopListen();
