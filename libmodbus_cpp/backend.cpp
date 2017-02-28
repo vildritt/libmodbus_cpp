@@ -242,7 +242,7 @@ public:
 
     void beforeStartListen() {
         auto it = m_uniHook.begin();
-        while(it == m_uniHook.end()) {
+        while(it != m_uniHook.end()) {
             it->compile();
             ++it;
         }
