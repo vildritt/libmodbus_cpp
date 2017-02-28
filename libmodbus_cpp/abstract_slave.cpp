@@ -6,7 +6,7 @@ void libmodbus_cpp::reverseBytes(char* data, unsigned int size) {
     if (size < 2) {
         return;
     }
-    const unsigned int halfSize = size / 2;
+    unsigned int halfSize = size / 2;
     char* rdata = data + size - 1;
     while (halfSize-- > 0) {
         const char temp    = *data;
@@ -20,7 +20,7 @@ void libmodbus_cpp::reverseBytesPairs(char* data, unsigned int size) {
     if (size < 2) {
         return;
     }
-    const unsigned int pairCount = size / 2;
+    unsigned int pairCount = size / 2;
     uint16_t* d = reinterpret_cast<uint16_t*>(data);
     while (pairCount-- > 0) {
         uint16_t temp = *d;
