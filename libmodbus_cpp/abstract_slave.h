@@ -53,6 +53,7 @@ public:
 
     bool startListen();
     void stopListen();
+    void setTargetByteOrder(ByteOrder byteOrder);
 
     /// data access
 

@@ -203,6 +203,12 @@ void libmodbus_cpp::AbstractSlave::stopListen()
 }
 
 
+void libmodbus_cpp::AbstractSlave::setTargetByteOrder(ByteOrder byteOrder)
+{
+    getBackend()->setTargetByteOrder(byteOrder);
+}
+
+
 /// libmodbus_cpp::AbstractSlave data access
 
 
