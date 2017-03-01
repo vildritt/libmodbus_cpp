@@ -13,9 +13,10 @@ void reverseBytes(char* data, unsigned int size) {
     }
     unsigned int halfSize = size / 2;
     char* rdata = data + size - 1;
+    char* bdata = data;
     while (halfSize-- > 0) {
-        const char temp    = *data;
-        *data++ = *rdata;
+        const char temp = *bdata;
+        *bdata++ = *rdata;
         *rdata--  = temp;
     }
 }
@@ -26,10 +27,10 @@ void reverseBytesPairs(char* data, unsigned int size) {
         return;
     }
     unsigned int pairCount = size / 2;
-    uint16_t* d = reinterpret_cast<uint16_t*>(data);
+    uint16_t* d = (uint16_t*)(data);
     while (pairCount-- > 0) {
-        uint16_t temp = *d;
-        *d++ = (temp >> 8) || (temp << 8);
+        const uint16_t temp = *d;
+        *d++ = (temp >> 8) | (temp << 8);
     }
 }
 
@@ -79,7 +80,7 @@ void libmodbus_cpp::registerMemoryCopy(const void* source, unsigned int size, vo
 
     memcpy(distance, source, size);
 
-    char* d = reinterpret_cast<char*>(distance);
+    char* d = (char*)(distance);
 
     const ByteOrder nativeByteOrder = libmodbus_cpp::AbstractBackend::getSystemNativeByteOrder();
     if (nativeByteOrder == target) {

@@ -108,11 +108,18 @@ public:
         return getValue<ValueType, DataType::InputRegister>(address);
     }
 
+    template<DataType DT>
+    void fillWith(Address address, uint8_t value, int byteSize) {
+        const auto m = getBackend()->getMapper<DT>(address);
+        uint8_t* d = (uint8_t*)(m.table());
+        memset(d, value, byteSize);
+    }
+
 private:
 
     template<typename ValueType>
     void setValueToRegs(uint16_t *table, uint16_t address, const ValueType &value) {
-        registerMemoryCopy(&value,sizeof(ValueType), table + address, getBackend()->getTargetByteOrder());
+        registerMemoryCopy(&value, sizeof(ValueType), table + address, getBackend()->getTargetByteOrder());
     }
 
     template<typename ValueType>
