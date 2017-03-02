@@ -83,7 +83,6 @@ void libmodbus_cpp::SlaveTcpBackend::slot_processConnection()
 
 void libmodbus_cpp::SlaveTcpBackend::slot_readFromSocket()
 {
-    qDebug() << "Read from socket";
     QTcpSocket *s = dynamic_cast<QTcpSocket*>(sender());
     if (s) {
         if (m_verbose)
