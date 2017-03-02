@@ -108,7 +108,7 @@ private:
 template<DataType T>
 MappingWrapper<T> AbstractSlaveBackend::getMapper(Address address) const {
 
-    const MappingWrapper<T> res(getMap());
+    const MappingWrapper<T> res(this->getMap());
 
     if (!res.isAssigend()) {
         throw LocalReadError("map was not inited");
