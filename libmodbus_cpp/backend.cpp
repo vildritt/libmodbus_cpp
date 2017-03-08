@@ -98,6 +98,10 @@ public:
             hooks.append(stp);
         }
 
+        int count() const {
+            return hooks.size();
+        }
+
         void compile() {
             qSort(hooks.begin(), hooks.end(), [](const UniHookSetup &L, const UniHookSetup &R) -> bool{
                 if (L.range.from == R.range.from) {
@@ -140,12 +144,13 @@ public:
 
         const UniHookKey key = uniHookKey(info.type, info.accessMode, info.hookTime);
 
-        const auto hooks = m_uniHook.find(key);
-        if (hooks == m_uniHook.end()) {
+
+        if (!m_uniHook.contains(key)) {
             return;
         }
+        m_uniHook[key].process(info);
 
-        (*hooks).process(info);
+
     }
 
     void checkHookMap(const uint8_t *req, int req_length, const HooksByFunctionCode &oldHooks, HookTime hookTime) {

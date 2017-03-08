@@ -1,5 +1,8 @@
 #include <QMap>
 #include <QDebug>
+#include <QThread>
+#include <QTime>
+#include <QCoreApplication>
 #include <modbus/modbus-private.h>
 #include "modbus/modbus-rtu-private.h"
 #include <libmodbus_cpp/slave_rtu_backend.h>
@@ -108,36 +111,79 @@ void libmodbus_cpp::SlaveRtuBackend::doStopListen()
 void libmodbus_cpp::SlaveRtuBackend::slot_readFromPort()
 {
     if (m_verbose) {
-        qDebug() << "Read from port" << m_serialPort.portName();
+        qDebug() << "Read from port" << m_serialPort.portName() << m_serialPort.bytesAvailable();
     }
-    m_staticPort = &m_serialPort;
-    std::array<uint8_t, MODBUS_RTU_MAX_ADU_LENGTH> buf;
-    int messageLength = modbus_receive(getCtx(), buf.data());
-    if (messageLength > 0) {
-        if (m_verbose)
-            qDebug() << "received:" << QByteArray(reinterpret_cast<const char*>(buf.data()), messageLength);
-        processHooks(buf.data(), messageLength, HookTime::Preprocessing);
-        modbus_reply(getCtx(), buf.data(), messageLength, getMap());
-        processHooks(buf.data(), messageLength, HookTime::Postprocessing);
-    } else if (messageLength == -1) {
-        if (m_verbose)
-            qDebug() << modbus_strerror(errno);
+    static bool inProcess = false;
+
+    if (inProcess) {
+        return;
     }
-    m_staticPort = nullptr;
+
+    inProcess = true;
+
+    while (m_serialPort.bytesAvailable() > 0) {
+        m_staticPort = &m_serialPort;
+        std::array<uint8_t, MODBUS_RTU_MAX_ADU_LENGTH> buf;
+        int messageLength = modbus_receive(getCtx(), buf.data());
+        if (messageLength > 0) {
+            if (m_verbose) {
+                qDebug() << "received:" << QByteArray(reinterpret_cast<const char*>(buf.data()), messageLength);
+            }
+            processHooks(buf.data(), messageLength, HookTime::Preprocessing);
+            modbus_reply(getCtx(), buf.data(), messageLength, getMap());
+            processHooks(buf.data(), messageLength, HookTime::Postprocessing);
+        } else if (messageLength == -1) {
+            if (m_verbose) {
+                qDebug() << modbus_strerror(errno);
+            }
+        }
+
+        m_staticPort = nullptr;
+    }
+    inProcess = false;
 }
 
 int libmodbus_cpp::SlaveRtuBackend::customSelect(modbus_t *ctx, fd_set *rset, timeval *tv, int msg_length)
 {
     if (libmodbus_cpp::isVerbose()) {
-        qDebug() << "in custom select = ";
+        qDebug() << "in custom select = " << msg_length;
+        if (tv) {
+            qDebug() << "tv = " << tv->tv_sec << " " << tv->tv_usec;
+        }
     }
 
     Q_UNUSED(ctx);
     Q_UNUSED(rset);
-    Q_UNUSED(tv);
-    Q_UNUSED(msg_length);
-    //TODO 1: seems it will be buzy wait. Recheck!
-    return m_staticPort->bytesAvailable();
+
+//    //TODO 1: seems it will be buzy wait. Recheck!
+
+    double huh_ms;
+    if (tv) {
+        huh_ms = tv->tv_sec * 1000.0 + tv->tv_usec / 1000.0;
+    }
+
+    if (!m_staticPort) {
+        return -1;
+    }
+    QTime timer;
+    timer.start();
+
+    while(m_staticPort->bytesAvailable() < msg_length) {
+        if (tv) {
+            if (timer.elapsed() > huh_ms)  {
+                return 0;
+            }
+        }
+
+        QEventLoop el;
+        el.processEvents(QEventLoop::AllEvents, 50);
+
+        if (!m_staticPort) {
+            return -1;
+        }
+    }
+
+    return 1;
 }
 
 ssize_t libmodbus_cpp::SlaveRtuBackend::customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
@@ -147,7 +193,14 @@ ssize_t libmodbus_cpp::SlaveRtuBackend::customRecv(modbus_t *ctx, uint8_t *rsp, 
     }
 
     Q_UNUSED(ctx);
-    return m_staticPort->read(reinterpret_cast<char*>(rsp), rsp_length);
+    int a = m_staticPort->read(reinterpret_cast<char*>(rsp), rsp_length);
+    if (libmodbus_cpp::isVerbose()) {
+        qDebug() << "received = " << a;
+        if (a > 0) {
+            qDebug() << "received:" << QByteArray(reinterpret_cast<const char*>(rsp), a);
+        }
+    }
+    return a;
 }
 
 
@@ -158,5 +211,19 @@ ssize_t libmodbus_cpp::SlaveRtuBackend::customSend(modbus_t *ctx, const uint8_t 
     }
 
     Q_UNUSED(ctx);
-    return m_staticPort->write(reinterpret_cast<const char*>(rsp), rsp_length);
+    if (libmodbus_cpp::isVerbose()) {
+        qDebug() << "need to send = " << rsp_length;
+        if (rsp_length > 0) {
+            qDebug() << "data to send:" << QByteArray(reinterpret_cast<const char*>(rsp), rsp_length);
+        }
+    }
+
+
+    int a = m_staticPort->write(reinterpret_cast<const char*>(rsp), rsp_length);
+
+    if (libmodbus_cpp::isVerbose()) {
+        qDebug() << "sended = " << a;
+    }
+
+    return a;
 }
