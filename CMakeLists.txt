@@ -22,6 +22,7 @@ set(SOURCE_LIB
     libmodbus_cpp/factory.cpp
     libmodbus_cpp/global.cpp
     libmodbus_cpp/mapping_wrapper.h
+    libmodbus_cpp/logger.h
 )
 
 set(TESTS_APP

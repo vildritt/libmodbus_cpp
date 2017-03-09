@@ -2,6 +2,11 @@
 #include <modbus/modbus-private.h>
 #include <libmodbus_cpp/backend.h>
 #include <QVector>
+#include <QDebug>
+#include "logger.h"
+
+#define LDOM_RTU  "[modbus.slave.rtu.bk]"
+#define LDOM_HOOK "[modbus.slave.rtu.bk.hook]"
 
 using namespace libmodbus_cpp;
 
@@ -64,10 +69,12 @@ using UniHookKey = int;
 
 static UniHookKey uniHookKey(const DataType type, const AccessMode accessMode, const HookTime hookTime)
 {
-    return
+    const UniHookKey key =
             (static_cast<int>(type) << 16) +
             (static_cast<int>(accessMode) << 8) +
             (static_cast<int>(hookTime));
+    LMB_DGLOG(LDOM_HOOK, "key([" << (int)type << (int)accessMode << (int)hookTime <<"]) = " << key);
+    return key;
 }
 
 namespace  libmodbus_cpp {
@@ -144,10 +151,11 @@ public:
 
         const UniHookKey key = uniHookKey(info.type, info.accessMode, info.hookTime);
 
-
         if (!m_uniHook.contains(key)) {
             return;
         }
+
+        LMB_DGLOG(LDOM_HOOK, "call hook");
         m_uniHook[key].process(info);
 
 
@@ -178,6 +186,7 @@ public:
 
         // special case
         if (info.function == MODBUS_FC_WRITE_AND_READ_REGISTERS) {
+            LMB_DGLOG(LDOM_HOOK, "R/W func");
 
             info.type = DataType::HoldingRegister;
 
@@ -208,6 +217,7 @@ public:
                 info.accessMode = AccessMode::Write;
                 break;
             default:
+                LMB_WGLOG(LDOM_HOOK, "unhookable function: " << info.function);
                 return;
         }
 
@@ -230,6 +240,7 @@ public:
                 info.type = DataType::InputRegister;
                 break;
             default:
+                LMB_WGLOG(LDOM_HOOK, "unhookable function: " << info.function);
                 return;
         }
         switch(info.function) {
@@ -248,6 +259,11 @@ public:
                 info.rangeSize = 1;
                 return;
         }
+
+        LMB_DGLOG(LDOM_HOOK, "try process hook on A = " << info.rangeBaseAddress
+                  << "-" << info.rangeSize
+                  << "  T = " << (int)info.type
+                  << "  F = " << info.function);
 
         tryProcessUniHook(info);
 
@@ -276,6 +292,7 @@ AbstractSlaveBackend::AbstractSlaveBackend()
 
 void AbstractSlaveBackend::processHooks(const uint8_t *req, int req_length, HookTime hookTime)
 {
+    LMB_DGLOG(LDOM_HOOK, "process event " << (hookTime == HookTime::Preprocessing ? "pre" : "post"));
     if (hookTime == HookTime::Preprocessing) {
         d_ptr->checkHookMap(req, req_length, d_ptr->m_hooks, hookTime);
     } else {
@@ -326,5 +343,8 @@ void AbstractSlaveBackend::addPostMessageHook(FunctionCode funcCode, Address add
 
 void AbstractSlaveBackend::addUniHook(DataType type, AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func)
 {
-    d_ptr->m_uniHook[uniHookKey(type, accessMode, hookTime)].add(rangeBaseAddress, rangeSize, func);
+    const UniHookKey key = uniHookKey(type, accessMode, hookTime);
+    d_ptr->m_uniHook[key].add(rangeBaseAddress, rangeSize, func);
+
+    LMB_DGLOG(LDOM_HOOK, "add hook for " << key << ". Count = " << d_ptr->m_uniHook[key].count());
 }

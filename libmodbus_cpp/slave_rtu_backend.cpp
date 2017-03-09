@@ -7,23 +7,29 @@
 #include "modbus/modbus-rtu-private.h"
 #include <libmodbus_cpp/slave_rtu_backend.h>
 #include <libmodbus_cpp/global.h>
+#include "logger.h"
+
 
 QSerialPort *libmodbus_cpp::SlaveRtuBackend::m_staticPort = nullptr;
+
+
+#define LDOM_SRTU "[modbus.slave.rtu]"
+#define LDOM_IO   "[modbus.slave.rtu.io]"
+#define LDOM_EVT  "[modbus.slave.rtu.io.evt]"
+#define LDOM_PKT  "[modbus.slave.rtu.io.pkt]"
+
 
 libmodbus_cpp::SlaveRtuBackend::SlaveRtuBackend()
     : m_verbose(libmodbus_cpp::isVerbose())
 {
-    if (m_verbose) {
-        qDebug() << "modbus slave rtu created";
-    }
+    LMB_DLOG(LDOM_SRTU, "ctor");
 }
+
 
 libmodbus_cpp::SlaveRtuBackend::~SlaveRtuBackend()
 {
     try {
-        if (m_verbose) {
-            qDebug() << "modbus slave rtu DTOR";
-        }
+        LMB_DLOG(LDOM_SRTU, "dtor");
         auto ctx = getCtx();
         if (ctx) {
             ctx->backend = m_originalBackend; // for normal deinit by libmodbus
@@ -35,15 +41,14 @@ libmodbus_cpp::SlaveRtuBackend::~SlaveRtuBackend()
 
 }
 
+
 void libmodbus_cpp::SlaveRtuBackend::init(const char *device, int baud, libmodbus_cpp::Parity parity, libmodbus_cpp::DataBits dataBits, libmodbus_cpp::StopBits stopBits)
 {
-    if (m_verbose) {
-        qDebug() << "init";
-    }
+    LMB_DLOG(LDOM_SRTU, "init connection with: " << device << "BR:" << baud);
 
     modbus_t *ctx = modbus_new_rtu(device, baud, (char)parity, (int)dataBits, (int)stopBits);
     if (!ctx) {
-        qWarning() << "ctx craete error";
+        LMB_WLOG(LDOM_SRTU, "ctx create error");
         throw Exception(std::string("Failed to create RTU context: ") + modbus_strerror(errno));
     }
     setCtx(ctx);
@@ -70,15 +75,14 @@ void libmodbus_cpp::SlaveRtuBackend::init(const char *device, int baud, libmodbu
     getCtx()->backend = m_customBackend.data();
     getCtx()->debug = m_verbose ? 1 : 0;
     if (getCtx()->debug) {
-        qInfo() << "libmodbus debug on";
+        LMB_ILOG(LDOM_SRTU, "verbose mode");
     }
 }
 
+
 bool libmodbus_cpp::SlaveRtuBackend::doStartListen()
 {
-    if (m_verbose) {
-        qDebug() << "start listen";
-    }
+    LMB_DLOG(LDOM_SRTU, "start server");
     bool res = openConnection();
     if (res) {
 #ifdef _WIN32
@@ -87,32 +91,31 @@ bool libmodbus_cpp::SlaveRtuBackend::doStartListen()
         CloseHandle(ctx_rtu->w_ser.fd);
 #endif
         if (!m_serialPort.open(QIODevice::ReadWrite)) {
-            qWarning() << "can't open uart port!";
+            LMB_WLOG(LDOM_SRTU, "can't open uart port = " << m_serialPort.portName());
         } else {
-            qInfo() << "uart port opened";
+            LMB_DLOG(LDOM_SRTU, "uart opened");
         }
         if (!connect(&m_serialPort, &QSerialPort::readyRead, this, &SlaveRtuBackend::slot_readFromPort)) {
-            qWarning() << "can't connect to read port signal!";
+            LMB_WLOG(LDOM_SRTU, "can't connect to read port signal!");
         }
     }
 
-    if (m_verbose) {
-        qDebug() << "start listen res =" << res;
-    }
+    LMB_DLOG(LDOM_SRTU, "server start result = " << res);
 
     return res;
 }
+
 
 void libmodbus_cpp::SlaveRtuBackend::doStopListen()
 {
     m_serialPort.close();
 }
 
+
 void libmodbus_cpp::SlaveRtuBackend::slot_readFromPort()
 {
-    if (m_verbose) {
-        qDebug() << "Read from port" << m_serialPort.portName() << m_serialPort.bytesAvailable();
-    }
+    LMB_DLOG(LDOM_EVT, "new data in port");
+
     static bool inProcess = false;
 
     if (inProcess) {
@@ -122,20 +125,17 @@ void libmodbus_cpp::SlaveRtuBackend::slot_readFromPort()
     inProcess = true;
 
     while (m_serialPort.bytesAvailable() > 0) {
+        LMB_DLOG(LDOM_PKT, "try read rest of data size = " << m_serialPort.bytesAvailable());
         m_staticPort = &m_serialPort;
         std::array<uint8_t, MODBUS_RTU_MAX_ADU_LENGTH> buf;
         int messageLength = modbus_receive(getCtx(), buf.data());
         if (messageLength > 0) {
-            if (m_verbose) {
-                qDebug() << "received:" << QByteArray(reinterpret_cast<const char*>(buf.data()), messageLength);
-            }
+            LMB_DLOG(LDOM_PKT, "received packet: " << BUF2HEX(buf.data(), messageLength));
             processHooks(buf.data(), messageLength, HookTime::Preprocessing);
             modbus_reply(getCtx(), buf.data(), messageLength, getMap());
             processHooks(buf.data(), messageLength, HookTime::Postprocessing);
         } else if (messageLength == -1) {
-            if (m_verbose) {
-                qDebug() << modbus_strerror(errno);
-            }
+            LMB_WLOG(LDOM_PKT, modbus_strerror(errno));
         }
 
         m_staticPort = nullptr;
@@ -143,87 +143,87 @@ void libmodbus_cpp::SlaveRtuBackend::slot_readFromPort()
     inProcess = false;
 }
 
+
 int libmodbus_cpp::SlaveRtuBackend::customSelect(modbus_t *ctx, fd_set *rset, timeval *tv, int msg_length)
 {
-    if (libmodbus_cpp::isVerbose()) {
-        qDebug() << "in custom select = " << msg_length;
-        if (tv) {
-            qDebug() << "tv = " << tv->tv_sec << " " << tv->tv_usec;
-        }
-    }
+    const double timeous_ms =
+            (tv)
+            ? (tv->tv_sec * 1000.0 + tv->tv_usec / 1000.0)
+            : 0.0;
+
+    LMB_DGLOG(LDOM_IO,
+             "select. Wait for " << msg_length << " bytes. " <<
+             "Avail" << m_staticPort->bytesAvailable() <<
+             "TO = " << (tv ? timeous_ms : -1.0));
 
     Q_UNUSED(ctx);
     Q_UNUSED(rset);
 
-//    //TODO 1: seems it will be buzy wait. Recheck!
-
-    double huh_ms;
-    if (tv) {
-        huh_ms = tv->tv_sec * 1000.0 + tv->tv_usec / 1000.0;
-    }
 
     if (!m_staticPort) {
+        LMB_WGLOG(LDOM_IO, "SP is nil");
         return -1;
     }
-    QTime timer;
-    timer.start();
 
+    QTime timeoutTimer;
+    timeoutTimer.start();
+
+    qint64 prevAvail = m_staticPort->bytesAvailable();
     while(m_staticPort->bytesAvailable() < msg_length) {
         if (tv) {
-            if (timer.elapsed() > huh_ms)  {
-                return 0;
+            if (timeoutTimer.elapsed() > timeous_ms)  {
+                LMB_WGLOG(LDOM_IO, "Timeout! Elapsed[ms] = " << timeoutTimer.elapsed());
+                return 0; // no descriptors signaled
             }
         }
 
         QEventLoop el;
-        el.processEvents(QEventLoop::AllEvents, 50);
+        static const int pollInterval_ms = 50;
+        el.processEvents(QEventLoop::AllEvents, pollInterval_ms);
 
         if (!m_staticPort) {
+            LMB_WGLOG(LDOM_IO, "SP is nil");
             return -1;
+        }
+
+        const qint64 avail = m_staticPort->bytesAvailable();
+        if (avail != prevAvail) {
+            LMB_DGLOG(LDOM_IO, "avail = " << m_staticPort->bytesAvailable());
+            prevAvail = avail;
         }
     }
 
-    return 1;
+    return 1; // count if signaled descriptors
 }
+
 
 ssize_t libmodbus_cpp::SlaveRtuBackend::customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
 {
-    if (libmodbus_cpp::isVerbose()) {
-        qDebug() << "in custom receive";
+    Q_UNUSED(ctx);
+
+    const int readedCount = m_staticPort->read(reinterpret_cast<char*>(rsp), rsp_length);
+
+    LMB_DGLOG(LDOM_IO, "recv size = " << readedCount);
+    if (readedCount > 0) {
+        LMB_DGLOG(LDOM_IO, "recv data = " << BUF2HEX(rsp, readedCount));
     }
 
-    Q_UNUSED(ctx);
-    int a = m_staticPort->read(reinterpret_cast<char*>(rsp), rsp_length);
-    if (libmodbus_cpp::isVerbose()) {
-        qDebug() << "received = " << a;
-        if (a > 0) {
-            qDebug() << "received:" << QByteArray(reinterpret_cast<const char*>(rsp), a);
-        }
-    }
-    return a;
+    return readedCount;
 }
 
 
 ssize_t libmodbus_cpp::SlaveRtuBackend::customSend(modbus_t *ctx, const uint8_t *rsp, int rsp_length)
 {
-    if (libmodbus_cpp::isVerbose()) {
-        qDebug() << "in custom send";
-    }
-
     Q_UNUSED(ctx);
-    if (libmodbus_cpp::isVerbose()) {
-        qDebug() << "need to send = " << rsp_length;
-        if (rsp_length > 0) {
-            qDebug() << "data to send:" << QByteArray(reinterpret_cast<const char*>(rsp), rsp_length);
-        }
+
+    LMB_DGLOG(LDOM_IO, "send size = " << rsp_length);
+    if (rsp_length > 0) {
+        LMB_DGLOG(LDOM_IO, "send data = " << BUF2HEX(rsp, rsp_length));
     }
 
+    const int writedCount = m_staticPort->write(reinterpret_cast<const char*>(rsp), rsp_length);
 
-    int a = m_staticPort->write(reinterpret_cast<const char*>(rsp), rsp_length);
+    LMB_DGLOG(LDOM_IO, "sent = " << writedCount);
 
-    if (libmodbus_cpp::isVerbose()) {
-        qDebug() << "sended = " << a;
-    }
-
-    return a;
+    return writedCount;
 }
