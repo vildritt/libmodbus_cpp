@@ -200,6 +200,7 @@ public:
             info.rangeSize = GET_HDR_U16(1);
             info.accessMode = AccessMode::Read;
             tryProcessUniHook(info);
+            return;
         }
 
         switch(info.function) {
@@ -257,7 +258,7 @@ public:
             case MODBUS_FC_MASK_WRITE_REGISTER     :
             default:
                 info.rangeSize = 1;
-                return;
+                break;
         }
 
         LMB_DGLOG(LDOM_HOOK, "try process hook on A = " << info.rangeBaseAddress
