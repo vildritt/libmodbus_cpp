@@ -5,6 +5,7 @@
 #include <QString>
 #include <QMap>
 #include <QMap>
+#include <QIODevice>
 #include <functional>
 #include <cstring>
 #include <modbus/modbus.h>
@@ -98,6 +99,13 @@ public:
     void addUniHook(DataType type, AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
     void addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func);
     void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
+
+protected:
+
+    static int customSelect(modbus_t *ctx, fd_set *rset, struct timeval *tv, int msg_length, QIODevice* dev);
+    static ssize_t customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length, QIODevice* dev);
+    static ssize_t customSend(modbus_t *ctx, const uint8_t *rsp, int rsp_length, QIODevice* dev);
+
 private:
     friend class AbstractSlaveBackendPrivate;
     QScopedPointer<AbstractSlaveBackendPrivate> ad_ptr;

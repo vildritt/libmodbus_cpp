@@ -2,7 +2,10 @@
 #include <libmodbus_cpp/slave_tcp_backend.h>
 #include <libmodbus_cpp/global.h>
 #include <errno.h>
+#include "logger.h"
 
+#define LDOM_TCP "[modbus.tcp.bk]"
+#define LDOM_PKT "[modbus.tcp.bk.pkt]"
 
 QTcpSocket *libmodbus_cpp::SlaveTcpBackend::m_currentSocket = Q_NULLPTR;
 
@@ -33,13 +36,15 @@ void libmodbus_cpp::SlaveTcpBackend::init(const char *address, int port, int max
     std::memcpy(m_customBackend.data(), m_originalBackend, sizeof(*m_customBackend));
     m_customBackend->select = customSelect;
     m_customBackend->recv = customRecv;
+    m_customBackend->send = customSend;
     getCtx()->debug = m_verbose ? 1 : 0;
     getCtx()->backend = m_customBackend.data();
 }
 
 bool libmodbus_cpp::SlaveTcpBackend::doStartListen()
 {
-    qDebug() << "Start listen";
+    LMB_DLOG(LDOM_TCP, "Start listen");
+
     int serverSocket = modbus_tcp_listen(getCtx(), m_maxConnectionCount);
     if (serverSocket != -1) {
         m_tcpServer.setSocketDescriptor(serverSocket);
@@ -50,7 +55,7 @@ bool libmodbus_cpp::SlaveTcpBackend::doStartListen()
 #endif
         return true;
     } else {
-        qDebug() << modbus_strerror(errno);
+        LMB_WLOG(LDOM_TCP, modbus_strerror(errno));
         return false;
     }
 }
@@ -62,14 +67,13 @@ void libmodbus_cpp::SlaveTcpBackend::doStopListen()
 
 void libmodbus_cpp::SlaveTcpBackend::slot_processConnection()
 {
-    //if (m_verbose)
-        qDebug() << "Process connection";
+    LMB_DLOG(LDOM_TCP, "Process connection");
+
     while (m_tcpServer.hasPendingConnections()) {
         QTcpSocket *s = m_tcpServer.nextPendingConnection();
         if (!s)
             continue;
-        if (m_verbose)
-            qDebug() << "new socket:" << s->socketDescriptor();
+        LMB_DLOG(LDOM_TCP, "new socket:" << s->socketDescriptor());
 #ifdef USE_QT5
         connect(s, &QTcpSocket::readyRead, this, &SlaveTcpBackend::slot_readFromSocket);
         connect(s, &QTcpSocket::disconnected, this, &SlaveTcpBackend::slot_removeSocket);
@@ -85,21 +89,18 @@ void libmodbus_cpp::SlaveTcpBackend::slot_readFromSocket()
 {
     QTcpSocket *s = dynamic_cast<QTcpSocket*>(sender());
     if (s) {
-        if (m_verbose)
-            qDebug() << "Read from socket" << s->socketDescriptor();
+        LMB_DLOG(LDOM_TCP, "Read from socket id =" << s->socketDescriptor());
         m_currentSocket = s;
         modbus_set_socket(getCtx(), s->socketDescriptor());
         std::array<uint8_t, MODBUS_TCP_MAX_ADU_LENGTH> buf;
         int messageLength = modbus_receive(getCtx(), buf.data());
         if (messageLength > 0) {
-            if (m_verbose)
-                qDebug() << "received:" << buf.data();
+            LMB_DLOG(LDOM_PKT, "received:" << BUF2HEX(buf.data(), messageLength));
             processHooks(buf.data(), messageLength, HookTime::Preprocessing);
             modbus_reply(getCtx(), buf.data(), messageLength, getMap());
             processHooks(buf.data(), messageLength, HookTime::Postprocessing);
         } else if (messageLength == -1) {
-            if (m_verbose)
-                qDebug() << modbus_strerror(errno);
+            LMB_WLOG(LDOM_TCP, modbus_strerror(errno));
             removeSocket(s); // if it wasn't removed by slot already
         }
     }
@@ -108,33 +109,37 @@ void libmodbus_cpp::SlaveTcpBackend::slot_readFromSocket()
 
 void libmodbus_cpp::SlaveTcpBackend::slot_removeSocket()
 {
-    if (m_verbose)
-        qDebug() << "Remove socket";
+    LMB_DLOG(LDOM_TCP, "Try remove socket");
+
     QTcpSocket *s = dynamic_cast<QTcpSocket*>(sender());
-    if (s)
+    if (s) {
         removeSocket(s);
+    }
 }
 
 void libmodbus_cpp::SlaveTcpBackend::removeSocket(QTcpSocket *s)
 {
     if (m_sockets.contains(s)) {
-        if (m_verbose)
-            qDebug() << "remove socket:" << s->socketDescriptor();
+        LMB_DLOG(LDOM_TCP, "remove socket:" << s->socketDescriptor());
         m_sockets.remove(s);
         s->close();
         s->deleteLater();
     }
 }
 
-int libmodbus_cpp::SlaveTcpBackend::customSelect(modbus_t *ctx, fd_set *rset, timeval *tv, int msg_length) {
-    Q_UNUSED(ctx);
-    Q_UNUSED(rset);
-    Q_UNUSED(tv);
-    Q_UNUSED(msg_length);
-    return 1; // TODO: may be not always 1
+
+int libmodbus_cpp::SlaveTcpBackend::customSelect(modbus_t *ctx, fd_set *rset, timeval *tv, int msg_length)
+{
+    return AbstractSlaveBackend::customSelect(ctx, rset, tv, msg_length, m_currentSocket);
 }
 
+
 ssize_t libmodbus_cpp::SlaveTcpBackend::customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length) {
-    Q_UNUSED(ctx);
-    return m_currentSocket->read(reinterpret_cast<char*>(rsp), rsp_length);
+    return AbstractSlaveBackend::customRecv(ctx, rsp, rsp_length, m_currentSocket);
+}
+
+
+ssize_t libmodbus_cpp::SlaveTcpBackend::customSend(modbus_t *ctx, const uint8_t *rsp, int rsp_length)
+{
+    return AbstractSlaveBackend::customSend(ctx, rsp, rsp_length, m_currentSocket);
 }

@@ -146,84 +146,17 @@ void libmodbus_cpp::SlaveRtuBackend::slot_readFromPort()
 
 int libmodbus_cpp::SlaveRtuBackend::customSelect(modbus_t *ctx, fd_set *rset, timeval *tv, int msg_length)
 {
-    const double timeous_ms =
-            (tv)
-            ? (tv->tv_sec * 1000.0 + tv->tv_usec / 1000.0)
-            : 0.0;
-
-    LMB_DGLOG(LDOM_IO,
-             "select. Wait for " << msg_length << " bytes. " <<
-             "Avail" << m_staticPort->bytesAvailable() <<
-             "TO = " << (tv ? timeous_ms : -1.0));
-
-    Q_UNUSED(ctx);
-    Q_UNUSED(rset);
-
-
-    if (!m_staticPort) {
-        LMB_WGLOG(LDOM_IO, "SP is nil");
-        return -1;
-    }
-
-    QTime timeoutTimer;
-    timeoutTimer.start();
-
-    qint64 prevAvail = m_staticPort->bytesAvailable();
-    while(m_staticPort->bytesAvailable() < msg_length) {
-        if (tv) {
-            if (timeoutTimer.elapsed() > timeous_ms)  {
-                LMB_WGLOG(LDOM_IO, "Timeout! Elapsed[ms] = " << timeoutTimer.elapsed());
-                return 0; // no descriptors signaled
-            }
-        }
-
-        QEventLoop el;
-        static const int pollInterval_ms = 50;
-        el.processEvents(QEventLoop::AllEvents, pollInterval_ms);
-
-        if (!m_staticPort) {
-            LMB_WGLOG(LDOM_IO, "SP is nil");
-            return -1;
-        }
-
-        const qint64 avail = m_staticPort->bytesAvailable();
-        if (avail != prevAvail) {
-            LMB_DGLOG(LDOM_IO, "avail = " << m_staticPort->bytesAvailable());
-            prevAvail = avail;
-        }
-    }
-
-    return 1; // count if signaled descriptors
+    return AbstractSlaveBackend::customSelect(ctx, rset, tv, msg_length, m_staticPort);
 }
 
 
 ssize_t libmodbus_cpp::SlaveRtuBackend::customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length)
 {
-    Q_UNUSED(ctx);
-
-    const int readedCount = m_staticPort->read(reinterpret_cast<char*>(rsp), rsp_length);
-
-    LMB_DGLOG(LDOM_IO, "recv size = " << readedCount);
-    if (readedCount > 0) {
-        LMB_DGLOG(LDOM_IO, "recv data = " << BUF2HEX(rsp, readedCount));
-    }
-
-    return readedCount;
+    return AbstractSlaveBackend::customRecv(ctx, rsp, rsp_length, m_staticPort);
 }
 
 
 ssize_t libmodbus_cpp::SlaveRtuBackend::customSend(modbus_t *ctx, const uint8_t *rsp, int rsp_length)
 {
-    Q_UNUSED(ctx);
-
-    LMB_DGLOG(LDOM_IO, "send size = " << rsp_length);
-    if (rsp_length > 0) {
-        LMB_DGLOG(LDOM_IO, "send data = " << BUF2HEX(rsp, rsp_length));
-    }
-
-    const int writedCount = m_staticPort->write(reinterpret_cast<const char*>(rsp), rsp_length);
-
-    LMB_DGLOG(LDOM_IO, "sent = " << writedCount);
-
-    return writedCount;
+    return AbstractSlaveBackend::customSend(ctx, rsp, rsp_length, m_staticPort);
 }
