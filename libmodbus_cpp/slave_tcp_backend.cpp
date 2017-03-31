@@ -3,6 +3,7 @@
 #include <libmodbus_cpp/global.h>
 #include <errno.h>
 #include "logger.h"
+#include <array>
 
 #define LDOM_TCP "[modbus.tcp.bk]"
 #define LDOM_PKT "[modbus.tcp.bk.pkt]"
