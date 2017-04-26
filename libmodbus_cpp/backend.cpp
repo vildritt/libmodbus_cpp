@@ -126,7 +126,7 @@ public:
         void process(UniHookInfo& info) {
             info.range = AddressRange::fromSizedRange(info.rangeBaseAddress, info.rangeSize);
 
-            //TODO 1: improove speed
+            //TODO 2: improove speed
 
             const int N = hooks.size();
             for(int i = 0; i < N; ++i) {
