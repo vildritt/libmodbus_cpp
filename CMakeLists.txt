@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 2.8.6)
 
 project(modbus_cpp)
 
+set(LIBMODBUS_INCLUDE_DIRS       ${CMAKE_CURRENT_SOURCE_DIR}/libmodbus/include PARENT_SCOPE)
+set(LIBMODBUS_CPP_INCLUDE_DIRS   ${CMAKE_CURRENT_SOURCE_DIR}                   PARENT_SCOPE)
+set(LIBMODBUS_CPP_LIBRARIES_DIR  ${CMAKE_CURRENT_BINARY_DIR}                   PARENT_SCOPE)
+set(LIBMODBUS_CPP_LIBRARIES     -lmodbus_cpp -lmodbus                          PARENT_SCOPE)
+
 set(CMAKE_AUTOMOC ON)
 
 include_directories(libmodbus/include)
@@ -31,7 +36,7 @@ set(TESTS_APP
     tests/abstract_read_write_test.cpp
     tests/tcp_read_write_test.cpp
 #    tests/rtu_read_write_test.cpp
-    )
+)
 
 if(DEFINED USE_QT5)
     find_package(Qt5Core)
