@@ -29,7 +29,7 @@ inline RegType extractRegisterFromValue_unsafe(int idx, const ValueType &value) 
 template<typename RegType, typename ValueType>
 inline void insertRegisterIntoValue(int idx, ValueType &value, RegType reg) {
     RegType mask = -1; // all ones
-    value = value & ~(mask << idx) | (reg << idx);
+    value = (value & ~(mask << idx)) | (reg << idx);
 }
 
 template<typename RegType, typename ValueType>
