@@ -107,8 +107,9 @@ if(WIN32)
     link_directories(
         ${CMAKE_CURRENT_BINARY_DIR}
     )
-    target_link_libraries(modbus_cpp modbus)
 endif()
+
+target_link_libraries(modbus_cpp modbus)
 
 set_source_files_properties(libmodbus/libmodbus/src/modbus-tcp.c PROPERTIES COMPILE_FLAGS -w)
 
