@@ -1,5 +1,5 @@
 include(../libmodbus_cpp.pri)
 
-QT += network serialport
-LIBS += -L$${LIBMODBUS_CPP_DESTDIR} -l$${LIBMODBUS_CPP_TARGET} 
-LIBS += $${LIBMODBUS_LIB}
+LIBS += \
+    $${LIBMODBUS_CPP_LIB} \
+    $${LIBMODBUS_LIB}

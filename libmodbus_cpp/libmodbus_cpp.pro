@@ -5,20 +5,18 @@
 #-------------------------------------------------
 
 QT -= gui
-QT += network serialport
 
 TEMPLATE = lib
 
 CONFIG += c++11 dll
 
-include(../libmodbus_cpp.pri)
+include($${PWD}/../libmodbus_cpp.pri)
 
-DESTDIR = $$LIBMODBUS_CPP_DESTDIR
-TARGET  = $$LIBMODBUS_CPP_TARGET
-CONFIG += $$LIBMODBUS_CPP_CONFIG
+DESTDIR = $${LIBMODBUS_CPP_DESTDIR}
+TARGET  = $${LIBMODBUS_CPP_TARGET}
+CONFIG += $${LIBMODBUS_CPP_CONFIG}
 
-INCLUDEPATH += $${LIBMODBUS_HEADERS}
-LIBS += $$LIBMODBUS_LIB
+LIBS += $${LIBMODBUS_LIB}
 
 QMAKE_CXXFLAGS += -Wno-unused -Wno-format
 
