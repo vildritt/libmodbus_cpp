@@ -2,8 +2,6 @@ TEMPLATE = subdirs
 
 include(libmodbus_cpp.pri)
 
-DEFINES += USE_QT5
-
 SUBDIRS += \
     libmodbus \
     libmodbus_cpp

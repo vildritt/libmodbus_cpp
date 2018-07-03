@@ -17,6 +17,11 @@ QT += \
     network \
     serialport
 
+QT_VERSION
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+    DEFINES += USE_QT5
+}
 
 INCLUDEPATH += \
     $${LIBMODBUS_CPP_HEADERS}
