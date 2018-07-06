@@ -10,6 +10,7 @@ set(LIBMODBUS_CPP_LIBRARIES     -lmodbus_cpp -lmodbus                          P
 set(CMAKE_AUTOMOC ON)
 
 include_directories(libmodbus/include)
+include_directories(libmodbus/include/modbus) # to make available "modbus-version.h"e
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(WIN32)
