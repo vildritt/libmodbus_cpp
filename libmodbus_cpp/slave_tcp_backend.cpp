@@ -17,11 +17,14 @@ libmodbus_cpp::SlaveTcpBackend::SlaveTcpBackend()
 
 libmodbus_cpp::SlaveTcpBackend::~SlaveTcpBackend()
 {
-    auto ctx = getCtx();
-    if (ctx) {
-        ctx->backend = m_originalBackend; // for normal deinit by libmodbus
+    try {
+        auto ctx = getCtx();
+        if (ctx) {
+            ctx->backend = m_originalBackend; // for normal deinit by libmodbus
+        }
+        stopListen();
+    } catch (...) {
     }
-    stopListen();
 }
 
 void libmodbus_cpp::SlaveTcpBackend::init(const char *address, int port, int maxConnectionCount)

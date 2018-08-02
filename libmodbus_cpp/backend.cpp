@@ -35,9 +35,12 @@ ByteOrder AbstractBackend::getTargetByteOrder() const
 
 AbstractBackend::~AbstractBackend()
 {
-    if (m_ctx) {
-        closeConnection();
-        modbus_free(m_ctx);
+    try {
+        if (m_ctx) {
+            closeConnection();
+            modbus_free(m_ctx);
+        }
+    } catch (...) {
     }
 }
 
