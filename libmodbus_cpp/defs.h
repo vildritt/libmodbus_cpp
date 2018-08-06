@@ -2,8 +2,10 @@
 #define LIBMODBUS_CPP_DEFS_H
 
 #include <stdexcept>
-#include <modbus/modbus.h>
 #include <functional>
+
+#include <modbus/modbus.h>
+
 #include <QByteArray>
 
 namespace libmodbus_cpp {
