@@ -68,7 +68,10 @@ set(MODBUS_LIB
     )
 
 add_library(modbus SHARED ${MODBUS_LIB})
+
+if(NOT USE_IWYU)
 add_dependencies(modbus_cpp modbus)
+endif()
 
 link_directories(${LIBMODBUS_CPP_LIBRARIES_DIR})
 
@@ -76,7 +79,9 @@ if(LIBMODBUSCPP_TESTS)
     if(NOT WIN32)
         add_executable(modbus_tests ${TESTS_APP} ${SOURCE_LIB})
         target_link_libraries(modbus_tests ${LIBMODBUS_CPP_LIBRARIES} ${QT_LIBRARIES})
-        add_dependencies(modbus_tests modbus_cpp)
+        if(NOT USE_IWYU)
+            add_dependencies(modbus_tests modbus_cpp)
+        endif()
     endif()
 endif()
 
