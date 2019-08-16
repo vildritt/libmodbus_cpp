@@ -24,7 +24,7 @@ public:
     SlaveTcpBackend();
     ~SlaveTcpBackend();
 
-    void init(const char *address = NULL, int port = MODBUS_TCP_DEFAULT_PORT, int maxConnectionCount = 10); // NULL for server to listen all
+    void init(const char *address = nullptr, int port = MODBUS_TCP_DEFAULT_PORT, int maxConnectionCount = 10); // NULL for server to listen all
 
 protected:
     bool doStartListen() override;
