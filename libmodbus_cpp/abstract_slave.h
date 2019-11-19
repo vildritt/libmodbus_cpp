@@ -6,8 +6,15 @@
 #include <iterator>
 #include "backend.h"
 #include "defs.h"
+#include "mapping_wrapper.h"
 
 namespace libmodbus_cpp {
+
+// modbus data model impl io with app memory
+void registerMemoryCopy(const void *source, unsigned int size, void *distance, const ByteOrder target);
+void setModbusBit(uint8_t *table, Address address, bool value);
+bool getModbusBit(uint8_t *table, uint16_t address);
+
 
 class AbstractSlave
 {
@@ -22,96 +29,109 @@ protected:
 public:
     virtual ~AbstractSlave() {}
 
+    /// setup
+
     bool initMap(int holdingBitsCount, int inputBitsCount, int holdingRegistersCount, int inputRegistersCount);
     bool setAddress(uint8_t address);
     bool setDefaultAddress();
+
+    /// hooks
+
+    //[[deprecated("use addPreMessageHook insted or register* methods")]]
     void addHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
+
+    void registerHook(DataType type, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
+    void registerHook(DataType type, AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
+    void registerReadHook (DataType type, Address rangeBaseAddress, UniHookFunction func, HookTime hookTime = HookTime::Preprocessing);
+    void registerWriteHook(DataType type, Address rangeBaseAddress, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
+    void registerReadHookOnRange (DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Preprocessing);
+    void registerWriteHookOnRange(DataType type, Address rangeBaseAddress, Address rangeSize, UniHookFunction func, HookTime hookTime = HookTime::Postprocessing);
+
+    /// activation
 
     bool startListen();
     void stopListen();
+    void setTargetByteOrder(ByteOrder byteOrder);
 
-    void setValueToCoil(uint16_t address, bool value);
-    bool getValueFromCoil(uint16_t address);
+    /// data access
 
-    void setValueToDiscreteInput(uint16_t address, bool value);
-    bool getValueFromDiscreteInput(uint16_t address);
+    // bits
+
+    template<DataType dataType>
+    void setBit(Address address, bool value) {
+        const auto m = getBackend()->getMapper<dataType>(address);
+        setModbusBit(m.bitTable(), address, value);
+    }
+
+    template<DataType dataType>
+    bool getBit(Address address) {
+        const auto m = getBackend()->getMapper<dataType>(address);
+        return getModbusBit(m.bitTable(), address);
+    }
+
+    // registers
+
+    template<typename ValueType, DataType dataType>
+    void      setValue(Address address, ValueType value) {
+        setValueToRegs(getBackend()->getMapper<dataType>(address).regTable(), address, value);
+    }
+
+    template<typename ValueType, DataType dataType>
+    ValueType getValue(Address address) {
+        return getValueFromRegs<ValueType>(getBackend()->getMapper<dataType>(address).regTable(), address);
+    }
+
+    // NOTE: old intf but also it's needed to ceate all template funcs!
+
+    void setValueToCoil(Address address, bool value);
+    bool getValueFromCoil(Address address);
+
+    void setValueToDiscreteInput(Address address, bool value);
+    bool getValueFromDiscreteInput(Address address);
 
     template<typename ValueType>
-    void setValueToHoldingRegister(uint16_t address, ValueType value);
+    void setValueToHoldingRegister(Address address, ValueType value) {
+        setValue<ValueType, DataType::HoldingRegister>(address, value);
+    }
     template<typename ValueType>
-    ValueType getValueFromHoldingRegister(uint16_t address);
+    ValueType getValueFromHoldingRegister(Address address) {
+        return getValue<ValueType, DataType::HoldingRegister>(address);
+    }
+    template<typename ValueType>
+    void setValueToInputRegister(Address address, ValueType value) {
+        setValue<ValueType, DataType::InputRegister>(address, value);
+    }
+    template<typename ValueType>
+    ValueType getValueFromInputRegister(Address address) {
+        return getValue<ValueType, DataType::InputRegister>(address);
+    }
 
-    template<typename ValueType>
-    void setValueToInputRegister(uint16_t address, ValueType value);
-    template<typename ValueType>
-    ValueType getValueFromInputRegister(uint16_t address);
+    template<DataType DT>
+    void fillWith(Address address, uint8_t value, int byteSize) {
+        const auto m = getBackend()->getMapper<DT>(address);
+        uint8_t* d = (uint8_t*)(m.table());
+        memset(d, value, byteSize);
+    }
 
 private:
-    template<typename ValueType, typename TableType>
-    void setValueToTable(TableType *table, uint16_t address, const ValueType &value) {
-        int offset = sizeof(TableType) * address;
-        if (getBackend()->doesSystemByteOrderMatchTarget())
-            std::memcpy(reinterpret_cast<uint8_t*>(table) + offset, &value, sizeof(ValueType));
-        else {
-            const uint8_t *valueAsArray = reinterpret_cast<const uint8_t*>(&value);
-            int size = sizeof(ValueType);
-            for (int i = size - 1, j = 0; i >= 0; --i, ++j)
-                *(reinterpret_cast<uint8_t*>(table) + offset + j) = valueAsArray[i];
-        }
+
+    template<typename ValueType>
+    void setValueToRegs(uint16_t *table, uint16_t address, const ValueType &value) {
+        registerMemoryCopy(&value, sizeof(ValueType), table + address, getBackend()->getTargetByteOrder());
     }
 
-    template<typename ValueType, typename TableType>
-    ValueType getValueFromTable(TableType *table, uint16_t address) {
-        ValueType res(0);
-        int offset = sizeof(TableType) * address;
-        if (getBackend()->doesSystemByteOrderMatchTarget())
-            std::memcpy(&res, reinterpret_cast<uint8_t*>(table) + offset, sizeof(ValueType));
-        else {
-            uint8_t *resAsArray = reinterpret_cast<uint8_t*>(&res);
-            int size = sizeof(ValueType);
-            for (int i = size - 1, j = 0; i >= 0; --i, ++j)
-                resAsArray[i] = *(reinterpret_cast<uint8_t*>(table) + offset + j);
-        }
+    template<typename ValueType>
+    ValueType getValueFromRegs(uint16_t *table, uint16_t address) {
+        ValueType res;
+        registerMemoryCopy(table + address, sizeof(ValueType), &res, getBackend()->getTargetByteOrder());
         return res;
     }
+
 };
 
-template<typename ValueType>
-void AbstractSlave::setValueToHoldingRegister(uint16_t address, ValueType value) {
-    if (!getBackend()->getMap())
-        throw LocalWriteError("map was not inited");
-    if (getBackend()->getMap()->nb_registers <= address)
-        throw LocalWriteError("wrong address");
-    setValueToTable(getBackend()->getMap()->tab_registers, address, value);
-}
+} // ns
 
-template<typename ValueType>
-ValueType AbstractSlave::getValueFromHoldingRegister(uint16_t address) {
-    if (!getBackend()->getMap())
-        throw LocalReadError("map was not inited");
-    if (getBackend()->getMap()->nb_registers <= address)
-        throw LocalReadError("wrong address");
-    return getValueFromTable<ValueType>(getBackend()->getMap()->tab_registers, address);
-}
-
-template<typename ValueType>
-void AbstractSlave::setValueToInputRegister(uint16_t address, ValueType value) {
-    if (!getBackend()->getMap())
-        throw LocalWriteError("map was not inited");
-    if (getBackend()->getMap()->nb_input_registers <= address)
-        throw LocalWriteError("wrong address");
-    setValueToTable(getBackend()->getMap()->tab_input_registers, address, value);
-}
-
-template<typename ValueType>
-ValueType AbstractSlave::getValueFromInputRegister(uint16_t address) {
-    if (!getBackend()->getMap())
-        throw LocalReadError("map was not inited");
-    if (getBackend()->getMap()->nb_input_registers <= address)
-        throw LocalReadError("wrong address");
-    return getValueFromTable<ValueType>(getBackend()->getMap()->tab_input_registers, address);
-}
-
-}
 
 #endif // LIBMODBUS_CPP_ABSTRACTSLAVE_H

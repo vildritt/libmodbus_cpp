@@ -5,20 +5,20 @@
 #-------------------------------------------------
 
 QT -= gui
-QT += network serialport
 
 TEMPLATE = lib
 
-CONFIG += c++11
+CONFIG += c++11 dll
 
-include(../libmodbus_cpp.pri)
+include($${PWD}/../libmodbus_cpp.pri)
 
-DESTDIR = $$LIBMODBUS_CPP_DESTDIR
-TARGET  = $$LIBMODBUS_CPP_TARGET
-CONFIG += $$LIBMODBUS_CPP_CONFIG
+DESTDIR = $${LIBMODBUS_CPP_DESTDIR}
+TARGET  = $${LIBMODBUS_CPP_TARGET}
+CONFIG += $${LIBMODBUS_CPP_CONFIG}
 
-INCLUDEPATH += $${PWD}/$${LIBMODBUS_DIR_RELATIVE}
-LIBS += $$LIBMODBUS_LIB
+LIBS += $${LIBMODBUS_LIB}
+
+QMAKE_CXXFLAGS += -Wno-unused -Wno-format
 
 SOURCES += \
     backend.cpp \
@@ -32,7 +32,8 @@ SOURCES += \
     slave_rtu.cpp \
     slave_rtu_backend.cpp \
     master_rtu_backend.cpp \
-    master_rtu.cpp
+    master_rtu.cpp \
+    global.cpp
 
 HEADERS += \
     backend.h \
@@ -47,7 +48,8 @@ HEADERS += \
     slave_rtu.h \
     slave_rtu_backend.h \
     master_rtu_backend.h \
-    master_rtu.h
+    master_rtu.h \
+    global.h
 
 DISTFILES += \
     libmodbus_cpp.prf

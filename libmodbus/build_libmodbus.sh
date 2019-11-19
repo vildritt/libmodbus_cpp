@@ -31,6 +31,17 @@ if [ -f "libmodbus.so" ]
         .
 fi
 
+
+need_some_tools() {
+    echo "!!!! ERROR: [$1] NOT installed. HINT: # apt install autoconf automake libtool" 1>&2
+    exit 1
+}
+
+! which aclocal    && need_some_tools aclocal
+! which autoreconf && need_some_tools autoreconf
+! which libtoolize && need_some_tools libtool
+
+
 cd "$SOURCES"
 ./autogen.sh
 ./configure --prefix="$PWD/bin"

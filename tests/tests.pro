@@ -5,12 +5,11 @@ TEMPLATE = app
 
 CONFIG += c++14
 
-include(../libmodbus_cpp.pri)
+include(../libmodbus_cpp.prf)
 
-DESTDIR = $$LIBMODBUS_CPP_DESTDIR
+DESTDIR = $${LIBMODBUS_CPP_DESTDIR}
 TARGET  = $${LIBMODBUS_CPP_TARGET}_tests
-CONFIG += $$LIBMODBUS_CPP_CONFIG
-LIBS += $$LIBMODBUS_LIB
+CONFIG += $${LIBMODBUS_CPP_CONFIG}
 
 SOURCES += \
     main.cpp \
@@ -29,5 +28,3 @@ unix {
     target.path = /usr/local/lib/libmodbus_cpp
     INSTALLS += target
 }
-
-include(../libmodbus_cpp.prf)

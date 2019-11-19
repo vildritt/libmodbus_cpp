@@ -1,0 +1,3 @@
+include($${PWD}/libmodbus.pri)
+
+LIBS += $${LIBMODBUS_LIB}

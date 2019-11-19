@@ -6,27 +6,24 @@ LIBMODBUS_CPP_CONFIG = \
 LIBMODBUS_CPP_HEADERS =  $${PWD}
 
 
+LIBMODBUS_TARGET = modbus
+LIBMODBUS_HEADERS =  $${PWD}/libmodbus/include
 
-include($${PWD}/lxqmake.pri,): {
+
+include(lxqmake.pri): {
     LIB_USER_CONF_FILES = $$lxqmt_getUserConfs($${PWD})
     for(LIB_USER_CONF_FILE, LIB_USER_CONF_FILES):include($$LIB_USER_CONF_FILE)
 }
+
 
 
 QT += \
     network \
     serialport
 
-QT_VERSION
-
-greaterThan(QT_MAJOR_VERSION, 4) {
-    DEFINES += USE_QT5
-}
-
 INCLUDEPATH += \
-    $${LIBMODBUS_CPP_HEADERS}
+    $${LIBMODBUS_CPP_HEADERS} \
+    $${LIBMODBUS_HEADERS}
 
 LIBMODBUS_CPP_LIB = -L$${LIBMODBUS_CPP_DESTDIR} -l$${LIBMODBUS_CPP_TARGET}
-
-
-include($${PWD}/libmodbus/libmodbus.prf)
+LIBMODBUS_LIB     = -L$${LIBMODBUS_CPP_DESTDIR} -l$${LIBMODBUS_TARGET}

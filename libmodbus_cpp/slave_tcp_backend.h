@@ -18,15 +18,17 @@ class SlaveTcpBackend : public QObject, public AbstractSlaveBackend {
     QSet<QTcpSocket*> m_sockets;
     const modbus_backend_t *m_originalBackend = nullptr;
     QScopedPointer<modbus_backend_t> m_customBackend;
-    bool m_verbose = false;
+    bool m_verbose;
 
 public:
     SlaveTcpBackend();
     ~SlaveTcpBackend();
 
-    void init(const char *address = NULL, int port = MODBUS_TCP_DEFAULT_PORT, int maxConnectionCount = 10); // NULL for server to listen all
-    bool startListen() override;
-    void stopListen() override;
+    void init(const char *address = nullptr, int port = MODBUS_TCP_DEFAULT_PORT, int maxConnectionCount = 10); // NULL for server to listen all
+
+protected:
+    bool doStartListen() override;
+    void doStopListen() override;
 
 private slots:
     void slot_processConnection();
@@ -39,6 +41,7 @@ private:
     static QTcpSocket *m_currentSocket;
     static int customSelect(modbus_t *ctx, fd_set *rset, struct timeval *tv, int msg_length);
     static ssize_t customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length);
+    static ssize_t customSend(modbus_t *ctx, const uint8_t *rsp, int rsp_length);
 };
 
 }

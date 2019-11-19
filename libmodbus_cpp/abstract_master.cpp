@@ -83,10 +83,11 @@ void libmodbus_cpp::AbstractMaster::setSlaveAddress(uint8_t address)
 
 QString libmodbus_cpp::AbstractMaster::readSlaveId()
 {
-    std::array<uint8_t, 80> buf = { 0 };
+    std::array<uint8_t, 80> buf{ 0 };
     int errorCode = modbus_report_slave_id(getBackend()->getCtx(), buf.size(), buf.data());
-    if (errorCode == -1)
+    if (errorCode == -1) {
         throw RemoteReadError(modbus_strerror(errno));
+    }
     return QString(reinterpret_cast<const char*>(buf.data()));
 }
 
@@ -97,12 +98,14 @@ libmodbus_cpp::RawResult libmodbus_cpp::AbstractMaster::sendRawRequest(uint8_t s
     req[1] = functionCode;
     std::copy(data.begin(), data.end(), req.begin() + 2);
     int errorCode = modbus_send_raw_request(getBackend()->getCtx(), req.data(), req.size());
-    if (errorCode == -1)
+    if (errorCode == -1) {
         throw RemoteWriteError(modbus_strerror(errno));
-    std::array<uint8_t, MODBUS_MAX_ADU_LENGTH> buf = { 0 };
+    }
+    std::array<uint8_t, MODBUS_MAX_ADU_LENGTH> buf{ 0 };
     errorCode = modbus_receive_confirmation(getBackend()->getCtx(), buf.data());
-    if (errorCode == -1)
+    if (errorCode == -1) {
         throw RemoteReadError(modbus_strerror(errno));
+    }
     int headerLength = modbus_get_header_length(getBackend()->getCtx());
     uint8_t returnedAddress = buf[headerLength - 1];
     uint8_t returnedFunctionCode = buf[headerLength];

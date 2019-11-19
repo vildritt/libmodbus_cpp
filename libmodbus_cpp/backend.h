@@ -5,12 +5,14 @@
 #include <QString>
 #include <QMap>
 #include <QMap>
+#include <QIODevice>
 #include <functional>
 #include <cstring>
 #include <modbus/modbus.h>
 #include <modbus/modbus-rtu.h>
 #include <modbus/modbus-tcp.h>
 #include "defs.h"
+#include "mapping_wrapper.h"
 
 namespace libmodbus_cpp {
 
@@ -27,7 +29,7 @@ inline RegType extractRegisterFromValue_unsafe(int idx, const ValueType &value) 
 template<typename RegType, typename ValueType>
 inline void insertRegisterIntoValue(int idx, ValueType &value, RegType reg) {
     RegType mask = -1; // all ones
-    value = value & ~(mask << idx) | (reg << idx);
+    value = (value & ~(mask << idx)) | (reg << idx);
 }
 
 template<typename RegType, typename ValueType>
@@ -40,7 +42,7 @@ class AbstractBackend
 {
     modbus_t *m_ctx = Q_NULLPTR;
     ByteOrder targetByteOrder = ByteOrder::LittleEndian;
-    ByteOrder systemByteOrder = checkSystemByteOrder();
+    ByteOrder systemByteOrder = getSystemNativeByteOrder();
 
 protected:
     AbstractBackend();
@@ -57,40 +59,76 @@ public:
     bool openConnection();
     void closeConnection();
 
-    bool doesSystemByteOrderMatchTarget() const;
+    bool doesSystemNativeByteOrderMatchTarget() const;
 
-private:
-    static ByteOrder checkSystemByteOrder();
+    /**
+     * @brief target byte order determines byte order of multibyte data stored in modbus packet(!) buffer
+     * It's not a byte order of internal memeory storage or something like this, it is only about PACKET buffer
+     * Client works only with modus packets so it must be interesed in order of packet bytes only
+     */
+    void      setTargetByteOrder(ByteOrder order);
+    ByteOrder getTargetByteOrder() const;
+
+    static ByteOrder getSystemNativeByteOrder();
 };
 
+class AbstractSlaveBackendPrivate;
 class AbstractSlaveBackend : public AbstractBackend
 {
-    using HooksByAddress = QMap<Address, HookFunction>;
-    using HooksByFunctionCode = QMap<FunctionCode, HooksByAddress>;
-
-    HooksByFunctionCode m_hooks;
-    modbus_mapping_t *m_map = Q_NULLPTR;
-
 protected:
     AbstractSlaveBackend();
 
-    void checkHooks(const uint8_t *req, int req_length);
+    void processHooks(const uint8_t *req, int req_length, HookTime hookTime);
+
+    virtual bool doStartListen() = 0;
+    virtual void doStopListen() = 0;
 
 public:
     ~AbstractSlaveBackend() override;
 
-    inline modbus_mapping_t *getMap() {
-        return m_map;
-    }
+    modbus_mapping_t *getMap() const;
+    template<DataType T>
+    MappingWrapper<T> getMapper(Address address) const;
 
     bool initMap(int holdingBitsCount, int inputBitsCount, int holdingRegistersCount, int inputRegistersCount);
     bool initRegisterMap(int holdingRegistersCount, int inputRegistersCount);
 
-    virtual bool startListen() = 0;
-    virtual void stopListen() = 0;
+    bool startListen();
+    void stopListen();
 
-    void addHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addUniHook(DataType type, AccessMode accessMode, Address rangeBaseAddress, Address rangeSize, HookTime hookTime, UniHookFunction func);
+    void addPreMessageHook(FunctionCode funcCode, Address address, HookFunction func);
+    void addPostMessageHook(FunctionCode funcCode, Address address, HookFunction func);
+
+protected:
+
+    static int customSelect(modbus_t *ctx, fd_set *rset, struct timeval *tv, int msg_length, QIODevice* dev);
+    static ssize_t customRecv(modbus_t *ctx, uint8_t *rsp, int rsp_length, QIODevice* dev);
+    static ssize_t customSend(modbus_t *ctx, const uint8_t *rsp, int rsp_length, QIODevice* dev);
+
+private:
+    friend class AbstractSlaveBackendPrivate;
+    QScopedPointer<AbstractSlaveBackendPrivate> ad_ptr;
+    AbstractSlaveBackendPrivate* d_ptr;
 };
+
+
+template<DataType T>
+MappingWrapper<T> AbstractSlaveBackend::getMapper(Address address) const {
+
+    const MappingWrapper<T> res(this->getMap());
+
+    if (!res.isAssigend()) {
+        throw LocalReadError("map was not inited");
+    }
+
+    if (res.count() <= address) {
+        throw LocalReadError("wrong address");
+    }
+
+    return res;
+}
+
 
 }
 

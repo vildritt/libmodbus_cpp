@@ -1,3 +1,1 @@
-include(libmodbus_cpp.pri)
-
-LIBS += -L$${LIBMODBUS_CPP_DESTDIR} -l$${LIBMODBUS_CPP_TARGET}
+include($${PWD}/libmodbus_cpp/libmodbus_cpp.prf)
