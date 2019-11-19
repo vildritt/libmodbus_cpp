@@ -18,7 +18,11 @@
 
 
 #define LMB_WLOG(Domain, Msg)   LMB_LOG(qWarning(), true,                  Domain, Msg)
-#define LMB_ILOG(Domain, Msg)   LMB_LOG(qInfo(),    LMB_LOG_LOCAL_CHECKER, Domain, Msg)
+#if QT_VERSION > QT_VERSION_CHECK(5,3,2)
+    #define LMB_ILOG(Domain, Msg)   LMB_LOG(qInfo(),    LMB_LOG_LOCAL_CHECKER, Domain, Msg)
+#else
+    #define LMB_ILOG(Domain, Msg)   LMB_LOG(qDebug(),    LMB_LOG_LOCAL_CHECKER, Domain, Msg)
+#endif
 #define LMB_DLOG(Domain, Msg)   LMB_LOG(qDebug(),   LMB_LOG_LOCAL_CHECKER, Domain, Msg)
 
 #define LMB_WGLOG(Domain, Msg)  LMB_LOG(qWarning(), true,                   Domain, Msg)
